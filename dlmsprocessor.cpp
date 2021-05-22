@@ -13,6 +13,179 @@ DlmsProcessor::DlmsProcessor(QObject *parent) : QObject(parent)
 
 //----------------------------------------------------------------------------------
 
+bool DlmsProcessor::isItTime2getShortNames2obisTotalFromVHsmart(const QVariantHash &hashConstData, QVariantHash &hashTmpData)
+{
+    const bool isDone = isItMarkedAsDoneSn2obis(hashTmpData);// hashTmpData.value("DLMS_shortNamesReadingDone", false).toBool();
+    if(isDone)//it was already received
+        return false;
+
+    if(!isItTime2getShortNames2obisTotalFromVH(hashConstData)){
+        markThisMeterAsDoneSn2obis(hashTmpData);
+        return false;
+    }
+    return true;//get the obis list
+
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::isItTime2getShortNames2obisVoltageFromVHsmart(const QVariantHash &hashConstData, QVariantHash &hashTmpData)
+{
+    const bool isDone = isItMarkedAsDoneSn2obis(hashTmpData);// hashTmpData.value("DLMS_shortNamesReadingDone", false).toBool();
+    if(isDone)//it was already received
+        return false;
+
+    if(!isItTime2getShortNames2obisVoltageFromVH(hashConstData)){
+        markThisMeterAsDoneSn2obis(hashTmpData);
+        return false;
+    }
+    return true;//get the obis list
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::isItTime2getShortNames2obisLoadProfileFromVHsmart(const QVariantHash &hashConstData, QVariantHash &hashTmpData)
+{
+    const bool isDone = isItMarkedAsDoneSn2obis(hashTmpData);// hashTmpData.value("DLMS_shortNamesReadingDone", false).toBool();
+    if(isDone)//it was already received
+        return false;
+
+    if(!isItTime2getShortNames2obisLoadProfileFromVH(hashConstData)){
+        markThisMeterAsDoneSn2obis(hashTmpData);
+        return false;
+    }
+    return true;//get the obis list
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::isItMarkedAsDoneSn2obis(const QVariantHash &hashTmpData)
+{
+    return hashTmpData.value("DLMS_shortNamesReadingDone", false).toBool();
+
+}
+
+//----------------------------------------------------------------------------------
+
+void DlmsProcessor::markThisMeterAsDoneSn2obis(QVariantHash &hashTmpData)
+{
+    hashTmpData.insert("DLMS_shortNamesReadingDone", true);
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::isItTime2getShortNames2obisTotalFromVH(const QVariantHash &hashConstData)
+{
+    return isItTime2getShortNames2obisTotal(hashConstData.value("NI").toString());
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::isItTime2getShortNames2obisTotal(const QString &ni)
+{
+    return isItTime2getShortNames2obisExt(ni, hNi2obis2ShortNamesTotal);
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::isItTime2getShortNames2obisVoltageFromVH(const QVariantHash &hashConstData)
+{
+    return isItTime2getShortNames2obisVoltage(hashConstData.value("NI").toString());
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::isItTime2getShortNames2obisVoltage(const QString &ni)
+{   
+    return isItTime2getShortNames2obisExt(ni, hNi2obis2ShortNamesVoltage);
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::isItTime2getShortNames2obisLoadProfileFromVH(const QVariantHash &hashConstData)
+{
+    return isItTime2getShortNames2obisLoadProfile(hashConstData.value("NI").toString());
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::isItTime2getShortNames2obisLoadProfile(const QString &ni)
+{
+    return isItTime2getShortNames2obisExt(ni, hNi2obis2ShortNamesLoadProfile);
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::isItTime2getShortNames2obisExt(const QString &ni, const QHash<QString, DlmsProcessor::DLMSShortNamesParams> &h)
+{
+
+    lastShortNames.ni = ni;
+    lastShortNames.lastObis2shortNames = h.value(ni);
+    lastShortNames.lastShortNames2get.clear();
+
+    return lastShortNames.lastObis2shortNames.obis2shortNames.isEmpty();//it has no data
+}
+
+//----------------------------------------------------------------------------------
+
+bool DlmsProcessor::addShortName2obisCode(const quint16 &shortname, const quint64 &obiscode)
+{
+    bool ok;
+    QString enrgk;
+    if(!DlmsHelper::ignoreThisObisCodeTariff(obiscode, ok, enrgk)){
+        DLMSShortNames onesett;
+        onesett.enrgKey = enrgk;
+        onesett.shortname = shortname;
+        lastShortNames.lastObis2shortNames.obis2shortNames.insert(obiscode, onesett);
+    }
+    return ok;
+}
+
+//----------------------------------------------------------------------------------
+
+void DlmsProcessor::swapParams(DlmsProcessor::DLMSShortNamesParams &inOut, const DlmsProcessor::DLMSShortNamesParams &in)
+{
+    const QList<quint64> lk = in.obis2shortNames.keys();
+
+    for(int i = 0, imax = lk.size(); i < imax; i++){
+        const auto obis = lk.at(i);
+        const auto params = in.obis2shortNames.value(obis);
+
+        inOut.obis2shortNames.insert(obis, params);
+        if(!params.enrgKey.isEmpty())
+            inOut.enrgKey2obis.insert(params.enrgKey, obis);
+
+    }
+
+
+
+}
+
+//----------------------------------------------------------------------------------
+
+void DlmsProcessor::updateLastNiShortNamesVoltage()
+{
+    if(!lastShortNames.ni.isEmpty())
+        hNi2obis2ShortNamesVoltage.insert(lastShortNames.ni, lastShortNames.lastObis2shortNames);
+}
+
+//----------------------------------------------------------------------------------
+
+void DlmsProcessor::updateLastNiShortNamesLoadProfile()
+{
+    if(!lastShortNames.ni.isEmpty())
+        hNi2obis2ShortNamesLoadProfile.insert(lastShortNames.ni, lastShortNames.lastObis2shortNames);
+}
+//----------------------------------------------------------------------------------
+
+void DlmsProcessor::updateLastNiShortNamesTotal()
+{
+    if(!lastShortNames.ni.isEmpty())
+        hNi2obis2ShortNamesTotal.insert(lastShortNames.ni, lastShortNames.lastObis2shortNames);
+}
+
+//----------------------------------------------------------------------------------
+
 void DlmsProcessor::addDefaultReadingParams(QVariantHash &hashMessage)
 {
     hashMessage.insert("quickCRC", true);
@@ -423,7 +596,7 @@ void DlmsProcessor::topArrayChecks(const bool &hasByteA8, QByteArray &meterMessH
 
 //----------------------------------------------------------------------------------
 
-QByteArray DlmsProcessor::crcCalc(const QByteArray &destSN, const quint8 &frameType, const quint8 &messCounterRRR, const quint8 &messCounterSSS, const QByteArray &arrMess)
+QByteArray DlmsProcessor::crcCalc(const QByteArray &destSN, const quint8 &frameType, const quint8 &messCounterRRR, const quint8 &messCounterSSS, const QByteArray &arrMessage)
 {
     QByteArray arrHeader("");
 
@@ -453,7 +626,7 @@ QByteArray DlmsProcessor::crcCalc(const QByteArray &destSN, const quint8 &frameT
 
     lastExchangeState.lastHiLoHex = arrAddrHex;
     arrHeader.append(arrAddrHex); //meter (dest) addr
-    arrHeader.append("03"); //source addr
+    arrHeader.append(lastExchangeState.sourceAddressH);// "03"); //source addr
 
     QByteArray byteFrameType;
     switch(frameType){
@@ -502,23 +675,23 @@ QByteArray DlmsProcessor::crcCalc(const QByteArray &destSN, const quint8 &frameT
     QByteArray crc16h("");
 
 
-    if(!arrMess.isEmpty()) //authorize 2 -nd message
+    if(!arrMessage.isEmpty()) //authorize 2 -nd message
         crc16h = "0000";
 
-    arrHeader.prepend( QByteArray::number(QByteArray::fromHex(arrHeader + crc16h + arrMess ).length() + 4 , 16).rightJustified(2, '0') );
+    arrHeader.prepend( QByteArray::number(QByteArray::fromHex(arrHeader + crc16h + arrMessage ).length() + 4 , 16).rightJustified(2, '0') );
     arrHeader.prepend("A0");
 
-    if(!arrMess.isEmpty()){ //HCS розраховується тільки якщо є дані, в іншому випадку обходитись FCS
+    if(!arrMessage.isEmpty()){ //HCS розраховується тільки якщо є дані, в іншому випадку обходитись FCS
         crc16h = QByteArray::number( qChecksum(QByteArray::fromHex(arrHeader).constData(), QByteArray::fromHex(arrHeader).length()) , 16).rightJustified(4, '0');
         crc16h = crc16h.right(2) + crc16h.left(2);
     }
 
     //FCS
-    const QByteArray crc16 = QByteArray::number( qChecksum(QByteArray::fromHex(arrHeader + crc16h + arrMess).constData(), QByteArray::fromHex(arrHeader + crc16h + arrMess).length()) , 16).rightJustified(4, '0');
-    arrHeader = QByteArray::fromHex(arrHeader + crc16h + arrMess + crc16.right(2) + crc16.left(2));
+    const QByteArray crc16 = QByteArray::number( qChecksum(QByteArray::fromHex(arrHeader + crc16h + arrMessage).constData(), QByteArray::fromHex(arrHeader + crc16h + arrMessage).length()) , 16).rightJustified(4, '0');
+    arrHeader = QByteArray::fromHex(arrHeader + crc16h + arrMessage + crc16.right(2) + crc16.left(2));
 
     if(verboseMode)
-        qDebug() << "arrMess=" << arrHeader.toHex();
+        qDebug() << "arrMessage=" << arrHeader.toHex();
 
 
     return QByteArray::fromHex("7E") + arrHeader + QByteArray::fromHex("7E");
@@ -526,9 +699,9 @@ QByteArray DlmsProcessor::crcCalc(const QByteArray &destSN, const quint8 &frameT
 
 //----------------------------------------------------------------------------------
 
-QByteArray DlmsProcessor::crcCalc(const QVariantHash &hashConstData, const quint8 &frameType, const quint8 &messCounterRRR, const quint8 &messCounterSSS, const QByteArray &arrMess)
+QByteArray DlmsProcessor::crcCalc(const QVariantHash &hashConstData, const quint8 &frameType, const quint8 &messCounterRRR, const quint8 &messCounterSSS, const QByteArray &arrMessage)
 {
-    return crcCalc(hashConstData.value("NI").toByteArray(), frameType, messCounterRRR, messCounterSSS, arrMess);
+    return crcCalc(hashConstData.value("NI").toByteArray(), frameType, messCounterRRR, messCounterSSS, arrMessage);
 
 }
 
@@ -536,15 +709,15 @@ QByteArray DlmsProcessor::crcCalc(const QVariantHash &hashConstData, const quint
 
 QByteArray DlmsProcessor::crcCalcFrameI(const QVariantHash &hashConstData, const ObisList &obisList, const AttributeList &attributeList)
 {
-    return crcCalcFrameIarr(hashConstData, DlmsHelper::arrMessXtend(lastExchangeState.lastObisList, obisList, attributeList, lastExchangeState.lastMeterIsShortDlms));
+    return crcCalcFrameIarr(hashConstData, DlmsHelper::arrMessageXtend(lastExchangeState.lastObisList, obisList, attributeList, lastExchangeState.lastMeterIsShortDlms));
 
 }
 
 //----------------------------------------------------------------------------------
 
-QByteArray DlmsProcessor::crcCalcFrameIarr(const QVariantHash &hashConstData, const QByteArray &arrMessXtend)
+QByteArray DlmsProcessor::crcCalcFrameIarr(const QVariantHash &hashConstData, const QByteArray &arrMessageXtend)
 {
-    return crcCalc(hashConstData, HDLC_FRAME_I, lastExchangeState.messageCounterRRR, lastExchangeState.messageCounterSSS, arrMessXtend);
+    return crcCalc(hashConstData, HDLC_FRAME_I, lastExchangeState.messageCounterRRR, lastExchangeState.messageCounterSSS, arrMessageXtend);
 
 }
 
@@ -573,7 +746,7 @@ bool DlmsProcessor::exitCozNAuth(const int &errCode, QVariantHash &hashTmpData)
 
 //----------------------------------------------------------------------------------
 
-QVariantHash DlmsProcessor::fullPowerEmptyValsExt(const QVariantHash &hashConstData, const QVariantHash &hashTmpData, const quint32 &pwrIntrvl, const QStringList &list4meterEnrg)
+QVariantHash DlmsProcessor::fullLoadProfileEmptyValsExt(const QVariantHash &hashConstData, const QVariantHash &hashTmpData, const quint32 &pwrIntrvl, const QStringList &list4meterEnrg)
 {
     QVariantHash hash;
 
@@ -610,6 +783,45 @@ QVariantHash DlmsProcessor::fullPowerEmptyValsExt(const QVariantHash &hashConstD
     hash.insert("messFail", false);
 
     return hash;
+}
+
+//----------------------------------------------------------------------------------
+
+void DlmsProcessor::preparyLoginedHashTmpData(QVariantHash &hashTmpData)
+{
+    hashTmpData.remove("DLMS_obis2scaller_ready"); //obis2scaller
+    lastExchangeState.lastMeterH.clear();
+
+    //these are from DLMS_obis2scaller_ready
+    hashTmpData.remove("DLMS_enrgObisList");//reset values
+    hashTmpData.remove("DLMS_enrgObisListIndx");
+}
+
+//----------------------------------------------------------------------------------
+
+void DlmsProcessor::fullLogined(const QVariantList &meterMessVar, const quint8 &frameType, QVariantHash &hashTmpData)
+{
+    if(hashTmpData.value("DLMS_SNRM_ready", false).toBool()){//пароль
+        if(frameType == HDLC_FRAME_AARE && !meterMessVar.isEmpty()){
+            hashTmpData.insert("logined", true);
+            hashTmpData.insert("messFail", false);
+//                step = 0xFFFF;
+        }
+        hashTmpData.remove("DLMS_SNRM_ready");
+
+
+    }else{
+        if(frameType == HDLC_FRAME_UA){
+            hashTmpData.insert("DLMS_SNRM_ready", true);
+            hashTmpData.insert("messFail", false);
+            //sometimes meter stop answering, so to prevent time wasting, detect it and stop
+            hashTmpData.insert("DLMS_FRAME_UA_COUNTER",
+                               hashTmpData.value("DLMS_FRAME_UA_COUNTER", 0).toInt() + 1);
+
+            resetHDLCglobalVariables();
+
+        }
+    }
 }
 
 //----------------------------------------------------------------------------------

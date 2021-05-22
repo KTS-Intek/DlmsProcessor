@@ -24,6 +24,7 @@ int DlmsHelper::datatype2len(const quint16 &dataType)
     case DLMS_DATA_TYPE_FLOAT64         : r = 8; break;
     case DLMS_DATA_TYPE_ENUM            : r = 1; break;
 
+    case DLMS_DATA_TYPE_EMPTY_LGZ_SN   : r = 0; break;
 
     case DLMS_DATA_FUCKING_UNKDATA      : r = 0; break;
     case DLMS_DATA_RELAY_FCKN_OK        : r = 0; break;
@@ -101,6 +102,10 @@ QVariant DlmsHelper::datatype2normal(const quint16 &dataType, const QByteArray &
         //    case DLMS_DATA_TYPE_ARRAY           : r = arrh.toUpper()            ; break;
         //    case DLMS_DATA_TYPE_STRUCTURE       : r = arrStructure2map(arr)     ; break; //02 0F FF 16 1E
         //    case DLMS_DATA_TYPE_COMPACT_ARRAY   : break;
+
+            case DLMS_DATA_TYPE_EMPTY_LGZ_SN:
+                r = dataType;
+                break;
 
             default:{
                 qDebug() << "datatype2normal=" << dataType << arrh;
@@ -450,7 +455,7 @@ void DlmsHelper::moveCache2hash(const QVariantHash &h, const QList<QByteArray> &
 
 //-----------------------------------------------------------------------------------------
 
-QByteArray DlmsHelper::arrMessWriteSN(ObisList &lastObisList, const quint64 &obis, const quint16 &attr, const QByteArray &arrh)
+QByteArray DlmsHelper::arrMessageWriteSN(ObisList &lastObisList, const quint64 &obis, const quint16 &attr, const QByteArray &arrh)
 {
     //obis must be from regular DLMS
     //attr - is short name dlms OBIS
@@ -466,13 +471,13 @@ QByteArray DlmsHelper::arrMessWriteSN(ObisList &lastObisList, const quint64 &obi
 
 //-----------------------------------------------------------------------------------------
 
-QByteArray DlmsHelper::arrMessWrite(ObisList &lastObisList, const quint64 &obis, const quint16 &attr, const QByteArray &arrh)
+QByteArray DlmsHelper::arrMessageWrite(ObisList &lastObisList, const quint64 &obis, const quint16 &attr, const QByteArray &arrh)
 {
     lastObisList.clear();
     lastObisList.append(obis);
 
     QByteArray payLoad = (obis == CMD_GSET_RELAY) ? "C3 01 81 " : "C1 01 81 ";
-    QByteArray a = obis2classId(obis) + QByteArray::number(obis, 16).rightJustified(12, '0');
+    QByteArray a = obis2classIdExt(obis) + QByteArray::number(obis, 16).rightJustified(12, '0');
     a.append( QByteArray::number(attr, 16).rightJustified(2, '0') + "00");
     a.append(arrh);
     payLoad.append(a);
@@ -484,12 +489,12 @@ QByteArray DlmsHelper::arrMessWrite(ObisList &lastObisList, const quint64 &obis,
 
 //-----------------------------------------------------------------------------------------
 
-QByteArray DlmsHelper::arrMessXtend(ObisList &lastObisList, const ObisList &obisList, const AttributeList &attributeList, const bool &lastIsShortDlms)
+QByteArray DlmsHelper::arrMessageXtend(ObisList &lastObisList, const ObisList &obisList, const AttributeList &attributeList, const bool &lastIsShortDlms)
 {
     lastObisList.clear();
 
     if(lastIsShortDlms)
-        return arrMessXtendSN(lastObisList, obisList, attributeList);
+        return arrMessageXtendSN(lastObisList, obisList, attributeList);
 
     const int obisCounter = obisList.size();
     if(obisCounter < 1)
@@ -512,7 +517,7 @@ QByteArray DlmsHelper::arrMessXtend(ObisList &lastObisList, const ObisList &obis
 
     for(int i = 0, iMax = obisCounter, iMax2 = attributeList.size(); i < iMax; i++){
         //<2byte class_id> <6byte obis code> <2 byte attribute>
-        QByteArray a = obis2classId(obisList.at(i)) + QByteArray::number(obisList.at(i), 16).rightJustified(12, '0');
+        QByteArray a = obis2classIdExt(obisList.at(i)) + QByteArray::number(obisList.at(i), 16).rightJustified(12, '0');
         a.append( QByteArray::number( (i < iMax2) ? attributeList.at(i) : 1 ).rightJustified(2, '0') + "00");
         payLoad.append(a);
         qDebug() << "xTend a=" << a;
@@ -525,28 +530,28 @@ QByteArray DlmsHelper::arrMessXtend(ObisList &lastObisList, const ObisList &obis
 
 //-----------------------------------------------------------------------------------------
 
-QByteArray DlmsHelper::arrMessXtendSN(ObisList &lastObisList, const ObisList &obisList, const AttributeList &attributeList)
+QByteArray DlmsHelper::arrMessageXtendSN(ObisList &lastObisList, const ObisList &obisList, const AttributeList &attributeList)
 {
     const int obisCounter = obisList.size();
     if(obisCounter < 1)
         return "";
 
 
-    QByteArray mess = "E6 E6 00 05 " + QByteArray::number(obisCounter, 16).rightJustified(2, '0');//LLC bytes + request + size
+    QByteArray message = "E6 E6 00 05 " + QByteArray::number(obisCounter, 16).rightJustified(2, '0');//LLC bytes + request + size
 
     for(int i = 0, iMax = obisCounter, iMax2 = attributeList.size(); i < iMax && i < iMax2; i++){
         //<size 1b> <attribute 2b>
         const QByteArray a = "02" + QByteArray::number(attributeList.at(i), 16).rightJustified(4, '0');
-        mess.append(a);
+        message.append(a);
     }
 
     lastObisList = obisList;
-    return mess;
+    return message;
 }
 
 //-----------------------------------------------------------------------------------------
 
-QByteArray DlmsHelper::obis2classId(const quint64 &obis)
+QByteArray DlmsHelper::obis2classIdExt(const quint64 &obis)
 {
     quint16 cid = 0x0;
 
@@ -603,17 +608,12 @@ QByteArray DlmsHelper::obis2classId(const quint64 &obis)
 
 
     case CMD_GET_PWR_ACTIVE_SUMM                 :
-    case CMD_GET_PWR_ACTIVE_SUMM_SN              :
 
         //A+
     case CMD_GET_PWR_ACTIVE_IMPORT_SUMM          :
-    case CMD_GET_PWR_ACTIVE_IMPORT_SUMM_SN       :
         //A-
     case CMD_GET_PWR_ACTIVE_EXPORT_SUMM          :
-    case CMD_GET_PWR_ACTIVE_EXPORT_SUMM_SN       :
 
-    case CMD_GET_PWR_REACTIVE_RIMPORT_SUMM_SN    :
-    case CMD_GET_PWR_REACTIVE_REXPORT_SUMM_SN    :
 
         //R+Ax
     case CMD_GET_PWR_REACTIVE_AXIMPORT_SUMM      :
@@ -874,6 +874,8 @@ void DlmsHelper::addEmptyIval2listDate(const QVariantHash &hashConstData, const 
     }
 }
 
+//-----------------------------------------------------------------------------------------
+
 QDateTime DlmsHelper::fixDstShift(const QDateTime &indt, const bool &isDstNow)
 {
     const int utcOffsetDt = indt.offsetFromUtc();
@@ -893,6 +895,8 @@ QDateTime DlmsHelper::fixDstShift(const QDateTime &indt, const bool &isDstNow)
     }
     return dt;//UTC time is true, but local can be wrong
 }
+
+//-----------------------------------------------------------------------------------------
 
 QDateTime DlmsHelper::fixDstShiftSmart25hour(const QDateTime &indt)
 {
@@ -924,3 +928,205 @@ QDateTime DlmsHelper::fixDstShiftSmart25hour(const QDateTime &indt)
 }
 
 //-----------------------------------------------------------------------------------------
+QByteArray DlmsHelper::getValidPassword(const QVariantHash &hashConstData, const bool &retInHex, const QByteArray &defPasswd)
+{
+    const QByteArray a = hashConstData.value("passwd", "").toByteArray();
+    if(a.isEmpty())
+        return (retInHex) ? defPasswd.toHex() : defPasswd;
+    return (retInHex) ? a.toHex() : a;
+}
+//----------------------------------------------------------------------------------
+
+bool DlmsHelper::ignoreThisObisCodeTariff(const quint64 &obisCode, bool &codeIsValid, QString &tstr)
+{
+    tstr.clear();
+    codeIsValid = true;
+    bool ignoreCode = false;
+    switch(obisCode){
+
+//|A|
+    case CMD_GET_ACTIVE_SUMM            : tstr = "T0_A+"     ; break;
+    case CMD_GET_ACTIVE_T1              : tstr = "T1_A+"     ; break;
+    case CMD_GET_ACTIVE_T2              : tstr = "T2_A+"     ; break;
+    case CMD_GET_ACTIVE_T3              : tstr = "T3_A+"     ; break;
+    case CMD_GET_ACTIVE_T4              : tstr = "T4_A+"     ; break;
+
+//A+
+    case CMD_GET_ACTIVE_IMPORT_SUMM     : tstr = "T0_A+"     ; break;
+    case CMD_GET_ACTIVE_IMPORT_T1       : tstr = "T1_A+"     ; break;
+    case CMD_GET_ACTIVE_IMPORT_T2       : tstr = "T2_A+"     ; break;
+    case CMD_GET_ACTIVE_IMPORT_T3       : tstr = "T3_A+"     ; break;
+    case CMD_GET_ACTIVE_IMPORT_T4       : tstr = "T4_A+"     ; break;
+
+//A-
+    case CMD_GET_ACTIVE_EXPORT_SUMM     : tstr = "T0_A-"     ; break;
+    case CMD_GET_ACTIVE_EXPORT_T1       : tstr = "T1_A-"     ; break;
+    case CMD_GET_ACTIVE_EXPORT_T2       : tstr = "T2_A-"     ; break;
+    case CMD_GET_ACTIVE_EXPORT_T3       : tstr = "T3_A-"     ; break;
+    case CMD_GET_ACTIVE_EXPORT_T4       : tstr = "T4_A-"     ; break;
+
+//R+
+
+//
+    case CMD_GET_REACTIVE_RIMPORT_SUMM : tstr = "T0_R+"     ; break;
+    case CMD_GET_REACTIVE_RIMPORT_T1   : tstr = "T1_R+"     ; break;
+    case CMD_GET_REACTIVE_RIMPORT_T2   : tstr = "T2_R+"     ; break;
+    case CMD_GET_REACTIVE_RIMPORT_T3   : tstr = "T3_R+"     ; break;
+    case CMD_GET_REACTIVE_RIMPORT_T4   : tstr = "T4_R+"     ; break;
+
+    case CMD_GET_REACTIVE_REXPORT_SUMM : tstr = "T0_R-"     ; break;
+    case CMD_GET_REACTIVE_REXPORT_T1   : tstr = "T1_R-"     ; break;
+    case CMD_GET_REACTIVE_REXPORT_T2   : tstr = "T2_R-"     ; break;
+    case CMD_GET_REACTIVE_REXPORT_T3   : tstr = "T3_R-"     ; break;
+    case CMD_GET_REACTIVE_REXPORT_T4   : tstr = "T4_R-"     ; break;
+
+
+
+    case CMD_GET_REACTIVE_R1_SUMM       : tstr = "T0_R+"     ; break;
+    case CMD_GET_REACTIVE_R1_T1         : tstr = "T1_R+"     ; break;
+    case CMD_GET_REACTIVE_R1_T2         : tstr = "T2_R+"     ; break;
+    case CMD_GET_REACTIVE_R1_T3         : tstr = "T3_R+"     ; break;
+    case CMD_GET_REACTIVE_R1_T4         : tstr = "T4_R+"     ; break;
+
+    case CMD_GET_REACTIVE_R2_SUMM       : tstr = "DLMS_T0_R+"; break;
+    case CMD_GET_REACTIVE_R2_T1         : tstr = "DLMS_T1_R+"; break;
+    case CMD_GET_REACTIVE_R2_T2         : tstr = "DLMS_T2_R+"; break;
+    case CMD_GET_REACTIVE_R2_T3         : tstr = "DLMS_T3_R+"; break;
+    case CMD_GET_REACTIVE_R2_T4         : tstr = "DLMS_T4_R+"; break;
+
+
+    case CMD_GET_REACTIVE_R3_SUMM       : tstr = "T0_R-"     ; break;
+    case CMD_GET_REACTIVE_R3_T1         : tstr = "T1_R-"     ; break;
+    case CMD_GET_REACTIVE_R3_T2         : tstr = "T2_R-"     ; break;
+    case CMD_GET_REACTIVE_R3_T3         : tstr = "T3_R-"     ; break;
+    case CMD_GET_REACTIVE_R3_T4         : tstr = "T4_R-"     ; break;
+
+
+    case CMD_GET_REACTIVE_R4_SUMM       : tstr = "DLMS_T0_R-"; break;
+    case CMD_GET_REACTIVE_R4_T1         : tstr = "DLMS_T1_R-"; break;
+    case CMD_GET_REACTIVE_R4_T2         : tstr = "DLMS_T2_R-"; break;
+    case CMD_GET_REACTIVE_R4_T3         : tstr = "DLMS_T3_R-"; break;
+    case CMD_GET_REACTIVE_R4_T4         : tstr = "DLMS_T4_R-"; break;
+
+    default: ignoreCode = true; codeIsValid = false; break;
+    }
+
+    return ignoreCode;
+}
+//------------------------------------------------------------------------------------------
+bool DlmsHelper::ignoreThisObisCodeVoltage(const quint64 &obisCode, const bool &isSinglePhase, bool &codeIsValid, QString &tstr)
+{
+    tstr.clear();
+    codeIsValid = true;
+    bool ignoreCode = false;
+
+//    qreal scaler = 1.0;
+
+    if(isSinglePhase){
+
+        switch(obisCode){
+
+        case CMD_GET_INSTANT_SUMM_FREQUENCY : tstr = "F"                         ; break;
+
+
+
+        case CMD_GET_INSTANT_SUMM_I         : tstr = "IA"                        ; break;
+        case CMD_GET_INSTANT_SUMM_U         : tstr = "UA"                        ; break;
+        case CMD_GET_INSTANT_SUMM_COSF      : tstr = "cos_fA"                    ; break;
+        case CMD_GET_INSTANT_SUMM_P         : tstr = "PA"       ;  break;//scaler =  0.001;
+
+        case CMD_GET_INSTANT_SUMM_Q         : tstr = "QA"                         ; break;
+
+        default: ignoreCode = true; codeIsValid = false; break;
+        }
+
+    }else{
+
+        switch(obisCode){
+
+        case CMD_GET_INSTANT_SUMM_FREQUENCY : tstr = "F"                         ; break;
+
+        case CMD_GET_INSTANT_L1_Q_PLUS      : tstr = "DLMS_QA"  ;  break;//scaler =  0.001; break;
+        case CMD_GET_INSTANT_L1_Q_MINUS     : tstr = "DLMS_QA"  ;  break;//scaler = -0.001; break;
+        case CMD_GET_INSTANT_L1_I           : tstr = "IA"                        ; break;
+        case CMD_GET_INSTANT_L1_U           : tstr = "UA"                        ; break;
+        case CMD_GET_INSTANT_L1_COSF        : tstr = "cos_fA"                    ; break;
+        case CMD_GET_INSTANT_L1_P           : tstr = "PA"       ;  break;//scaler =  0.001; break;
+
+        case CMD_GET_INSTANT_L2_Q_PLUS      : tstr = "DLMS_QB"  ; break;// scaler =  0.001; break;
+        case CMD_GET_INSTANT_L2_Q_MINUS     : tstr = "DLMS_QB"  ; break;// scaler = -0.001; break;
+        case CMD_GET_INSTANT_L2_I           : tstr = "IB"                        ; break;
+        case CMD_GET_INSTANT_L2_U           : tstr = "UB"                        ; break;
+        case CMD_GET_INSTANT_L2_COSF        : tstr = "cos_fB"                    ; break;
+        case CMD_GET_INSTANT_L2_P           : tstr = "PB"       ; break;// scaler =  0.001; break;
+
+        case CMD_GET_INSTANT_L3_Q_PLUS      : tstr = "DLMS_QC"  ; break;// scaler =  0.001; break;
+        case CMD_GET_INSTANT_L3_Q_MINUS     : tstr = "DLMS_QC"  ; break;// scaler = -0.001; break;
+        case CMD_GET_INSTANT_L3_I           : tstr = "IC"                        ; break;
+        case CMD_GET_INSTANT_L3_U           : tstr = "UC"                        ; break;
+        case CMD_GET_INSTANT_L3_COSF        : tstr = "cos_fC"                    ; break;
+        case CMD_GET_INSTANT_L3_P           : tstr = "PC"       ; break;// scaler =  0.001; break;
+
+
+        default: ignoreCode = true; codeIsValid = false; break;
+        }
+
+    }
+
+    return ignoreCode;
+
+
+}
+//------------------------------------------------------------------------------------------
+bool DlmsHelper::ignoreThisObisCodeLoadProfile(const quint64 &obisCode, bool &codeIsValid, QString &tstr)
+{
+    tstr.clear();
+    codeIsValid = true;
+    bool ignoreCode = false;
+
+    switch(obisCode){
+
+
+    case CMD_GET_PWR_ACTIVE_SUMM_7         :
+    case CMD_GET_PWR_ACTIVE_SUMM            :
+
+//    case CMD_GET_PWR_ACTIVE_IMPORT_SUMM_SN  :
+    case CMD_GET_PWR_ACTIVE_IMPORT_SUMM     : tstr = "A+";;break;
+
+//    case CMD_GET_PWR_ACTIVE_EXPORT_SUMM_SN  :
+    case CMD_GET_PWR_ACTIVE_EXPORT_SUMM     : tstr = "A-"; break;
+
+    case CMD_GET_PWR_REACTIVE_SUMM_7:
+    case CMD_GET_PWR_REACTIVE_AXIMPORT_SUMM : tstr = "R+"; break;
+
+//    case CMD_GET_PWR_REACTIVE_REXPORT_SUMM_SN:
+    case CMD_GET_PWR_REACTIVE_AYIMPORT_SUMM : tstr = "R-"; break;
+
+    default: ignoreCode = true; codeIsValid = false; break;
+
+    }
+    return ignoreCode;
+}
+
+//------------------------------------------------------------------------------------------
+QByteArray DlmsHelper::addObis4writeDtExt(ObisList &lastObisList, const quint64 &obisln, const quint16 &obissn, const bool &lastMeterIsShortDlms)
+{
+
+    //    quint64 obis, quint16 &attr, QByteArray &arrh
+
+//    const quint64 obis = CMD_GSET_DATETIME;
+    const quint16 attr = 2;
+
+    //yy yy MM dd dow hh mm ss FF FF FF FF
+    const QByteArray arrh = "09 0C" + dt2arr(QDateTime::currentDateTime().addSecs(4));
+
+
+    if(lastMeterIsShortDlms){
+
+//        const qint16 obissn = CMD_GSET_DATETIME_SN;
+        return arrMessageWriteSN(lastObisList, obisln, obissn, arrh);
+    }
+
+    return arrMessageWrite(lastObisList, obisln, attr, arrh);
+}
+//------------------------------------------------------------------------------------------

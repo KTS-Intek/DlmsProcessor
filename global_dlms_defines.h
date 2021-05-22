@@ -110,6 +110,10 @@
 #define DLMS_DATA_TYPE_DATE             0x1A //OCTET STRING (SIZE(5))
 #define DLMS_DATA_TYPE_TIME             0x1B //OCTET STRING (SIZE(4))
 
+
+#define DLMS_DATA_TYPE_EMPTY_LGZ_SN    0x0103
+
+
 #define DLMS_DATA_FUCKING_UNKDATA       0x010B
 #define DLMS_DATA_RELAY_FCKN_OK         0x0100
 
@@ -126,10 +130,10 @@
 
 
 #define CMD_GSET_DATETIME                       0x0000010000FF// 0000010000FF //class_id: 8, attr: 2
+//#define CMD_GSET_DATETIME_SN                    0x6808 gama
 
 
 #define CMD_GET_DATA_STTS                       0x0000600A07FF
-#define CMD_GET_DATA_STTS_SN                    0x0100603E01FF
 
 #define CMD_GSET_METER_NUMBER                   0x00002A0000FF// 000060010400 //class_id: 3, attr: 2
 #define CMD_GET_FIRMWARE_VERSION                0x0000600101FF //000060010300
@@ -143,38 +147,10 @@
 #define CMD_GET_LOAD_PROFILE                    0x0100630100FF//class_id: 7, attr: 3 - struct, 4 - interval, 5 - ?, 6 - ?, 7 - cells in use , 8 - total cells
 #define CMD_GET_LOAD_PROFILE_2                  0x0100630200FF//class_id: 7, attr: 3 - struct, 4 - interval, 5 - ?, 6 - ?, 7 - cells in use , 8 - total cells
 
-///short name load Profile
-#define CMD_GET_LOAD_PROFILE_DATA_ARR_SN        0xC008   //- Short Name Load Profile
-#define CMD_GET_LOAD_PROFILE_CAPT_OBJ_SN        0xC010   //
-#define CMD_GET_LOAD_PROFILE_CAPT_PER_SN        0xC018  //in seconds   must be 30 hvlyn
-#define CMD_GET_LOAD_PROFILE_SORT_MET_SN        0xC020  //sort method
-#define CMD_GET_LOAD_PROFILE_SORT_OBJ_SN        0xC028  //sort object
-#define CMD_GET_LOAD_PROFILE_USED_ENT_SN        0xC030  //used count
-#define CMD_GET_LOAD_PROFILE_PROF_ENT_SN        0xC038 //total count
-
-
-#define CMD_GET_PWR_ACTIVE_SCLR_UNT_SN          0x3018    //Load |P| scale & enum
-#define CMD_GET_PWR_ACTIVE_IMPORT_SCLR_UNT_SN   0x3118   //Load P+ scale & enum
-#define CMD_GET_PWR_ACTIVE_EXPORT_SCLR_UNT_SN   0x3218   // Load P- scale & enum
-#define CMD_GET_PWR_REACTIVE_RIMPORT_SCLR_UNT_SN 0x3318  //Load Q+ scale & enum
-#define CMD_GET_PWR_REACTIVE_REXPORT_SCLR_UNT_SN 0x3418 //  Load Q- scale & enum
-//35 18   Load R1 scale & enum
-//36 18   Load R2 scale & enum
-//37 18   Load R3 scale & enum
-//38 18   Load R4 scale & enum
-
 
 
 #define CMD_GET_BILLING_PROFILE                 0x0000620100FF//class_id: 7, attr: 3 - struct, 4 - interval, 5 - ?, 6 - ?, 7 - cells in use , 8 - total cells
 #define CMD_GET_BILLING_PROFILE_STTS            0x0100603E03FF//
-
-#define CMD_GET_BILLING_PROF_READ_ARC_SN        0xC108// - Billing Profile Archive
-#define CMD_GET_BILLING_PROF_CAPT_OBJ_SN        0xC110 //- Billing Profile Capture Objects
-#define CMD_GET_BILLING_PROF_CAPT_PER_SN        0xC118// - Billing Profile Capture Period
-#define CMD_GET_BILLING_PROF_SORT_MET_SN        0xC120// - Billing Profile Sort Method
-#define CMD_GET_BILLING_PROF_SORT_OBJ_SN        0xC128// - Billing Profile Sort Object
-#define CMD_GET_BILLING_PROF_ENTR_USE_SN        0xC130 // - Billing Profile entries in use
-#define CMD_GET_BILLING_PROF_ENTR_CNT_SN        0xC138// - Billing Profile Profile entries //total count
 
 
 #define CMD_GET_EV_STANDARD                     0x0000636200FF //99.98.0
@@ -188,35 +164,11 @@
 
 
 
-#define CMD_GET_EV_POWER_FAILURE_SN             0xC200 // 99.97.0  0x0000636209FF //99.98.9  power failure event log
-#define CMD_GET_EV_CHANGE_IN_PHASES_SN          0xC300 // 99.98.11  change in number of phases event log
-#define CMD_GET_EV_OVER_VOLTAGE_SN              0xCC00 // 99.98.12 over-voltage event log
-#define CMD_GET_EV_UNDER_VOLTAGE_SN             0xCD00 // 99.98.13 under voltage event log
-#define CMD_GET_EV_POWEROVERLIMIT_SN            0xCE00 // 99.98.20 power over limit
-#define CMD_GET_EV_REVERSECURRENT_SN            0xCA00 // 99.98.21 reverse current
-#define CMD_GET_EV_OVERCURRENT_SN               0xCB00 // 99.98.22 over current
-#define CMD_GET_EV_MAGNETICFIELD_SN             0xC600 // 99.98.30 magnetic field influence log
-#define CMD_GET_EV_CASEOPENED_SN                0xC700 // 99.98.31 case opened
-#define CMD_GET_EV_TERMINALOPENED_SN            0xC900 // 99.98.32 terminal cover opened
-#define CMD_GET_EV_CLOCK_SN                     0xC800 //   0x0000636208FF //99.98.8
-#define CMD_GET_EV_PARAMETRIZATION_SN           0xC500 // 99.98.41 parametrization log
-#define CMD_GET_EV_ERRORLOG_SN                  0xC400 //  99.98.50 error event log
-
-#define CMD_GET_EV_ENTRIES_IN_USE_ADDED_SN      0x30 //  add to obis code to get entries in use
-#define CMD_GET_EV_EVENTS_ADDED_SN              0x08 //  add to obis code to get events, do not forget to add dt object
-
-
 #define CMD_GET_ACTIVE_TARIFF_NUMBER            0x0000640000FF//class_id: 3, attr: 2
 
-//short name
-#define CMD_GSET_METER_NUMBER_SN        0x7008
-#define CMD_GET_FIRMWARE_VERSION_SN     0x7108
-#define CMD_GET_MODIFICATION_SN         0x7208
-#define CMD_GSET_DATETIME_SN            0x6808
-#define CMD_GSET_DATETIME_DSTFROM_SN    0x6820
-#define CMD_GSET_DATETIME_DSTTO_SN      0x6828
-#define CMD_GSET_DATETIME_DEVIAT_SN     0x6830
-#define CMD_GSET_DATETIME_DSTEN_SN      0x6838
+
+#define CMD_DLMS_EMPTY_OBIS_CODE                0x00007F000000
+
 
 
 //Total Energy   Поточні //class_id: 3, attr: 2
@@ -228,13 +180,6 @@
 #define CMD_GET_ACTIVE_T3                       0x01000F0803FF
 #define CMD_GET_ACTIVE_T4                       0x01000F0804FF
 
-///short name
-#define CMD_GET_ACTIVE_SUMM_SN                  0x0008
-#define CMD_GET_ACTIVE_T1_SN                    0x0020
-#define CMD_GET_ACTIVE_T2_SN                    0x0038
-#define CMD_GET_ACTIVE_T3_SN                    0x0050
-#define CMD_GET_ACTIVE_T4_SN                    0x0068
-
 
 
 //A+
@@ -244,13 +189,6 @@
 #define CMD_GET_ACTIVE_IMPORT_T3                0x0100010803FF
 #define CMD_GET_ACTIVE_IMPORT_T4                0x0100010804FF
 
-///short name
-#define CMD_GET_ACTIVE_IMPORT_SUMM_SN           0x0108
-#define CMD_GET_ACTIVE_IMPORT_T1_SN             0x0120
-#define CMD_GET_ACTIVE_IMPORT_T2_SN             0x0138
-#define CMD_GET_ACTIVE_IMPORT_T3_SN             0x0150
-#define CMD_GET_ACTIVE_IMPORT_T4_SN             0x0168
-
 
 //A-
 #define CMD_GET_ACTIVE_EXPORT_SUMM              0x0100020800FF
@@ -258,15 +196,6 @@
 #define CMD_GET_ACTIVE_EXPORT_T2                0x0100020802FF
 #define CMD_GET_ACTIVE_EXPORT_T3                0x0100020803FF
 #define CMD_GET_ACTIVE_EXPORT_T4                0x0100020804FF
-
-///short name
-#define CMD_GET_ACTIVE_EXPORT_SUMM_SN           0x0208
-#define CMD_GET_ACTIVE_EXPORT_T1_SN             0x0220
-#define CMD_GET_ACTIVE_EXPORT_T2_SN             0x0238
-#define CMD_GET_ACTIVE_EXPORT_T3_SN             0x0250
-#define CMD_GET_ACTIVE_EXPORT_T4_SN             0x0268
-
-
 
 
 
@@ -278,13 +207,6 @@
 #define CMD_GET_REACTIVE_RIMPORT_T3            0x0100030803FF
 #define CMD_GET_REACTIVE_RIMPORT_T4            0x0100030804FF
 
-///short name
-#define CMD_GET_REACTIVE_RIMPORT_SUMM_SN       0x0308
-#define CMD_GET_REACTIVE_RIMPORT_T1_SN         0x0320
-#define CMD_GET_REACTIVE_RIMPORT_T2_SN         0x0338
-#define CMD_GET_REACTIVE_RIMPORT_T3_SN         0x0350
-#define CMD_GET_REACTIVE_RIMPORT_T4_SN         0x0368
-
 
 //R-Ax  , it is only R- !!!
 #define CMD_GET_REACTIVE_REXPORT_SUMM          0x0100040800FF
@@ -292,13 +214,6 @@
 #define CMD_GET_REACTIVE_REXPORT_T2            0x0100040802FF
 #define CMD_GET_REACTIVE_REXPORT_T3            0x0100040803FF
 #define CMD_GET_REACTIVE_REXPORT_T4            0x0100040804FF
-
-///short name
-#define CMD_GET_REACTIVE_REXPORT_SUMM_SN       0x0408
-#define CMD_GET_REACTIVE_REXPORT_T1_SN         0x0420
-#define CMD_GET_REACTIVE_REXPORT_T2_SN         0x0438
-#define CMD_GET_REACTIVE_REXPORT_T3_SN         0x0450
-#define CMD_GET_REACTIVE_REXPORT_T4_SN         0x0468
 
 
 //R+A+ or R1
@@ -308,12 +223,6 @@
 #define CMD_GET_REACTIVE_R1_T3                  0x0100050803FF
 #define CMD_GET_REACTIVE_R1_T4                  0x0100050804FF
 
-///short name
-#define CMD_GET_REACTIVE_R1_SUMM_SN             0x0508
-#define CMD_GET_REACTIVE_R1_T1_SN               0x0520
-#define CMD_GET_REACTIVE_R1_T2_SN               0x0538
-#define CMD_GET_REACTIVE_R1_T3_SN               0x0550
-#define CMD_GET_REACTIVE_R1_T4_SN               0x0568
 
 //R+A- or R2
 #define CMD_GET_REACTIVE_R2_SUMM                0x0100060800FF
@@ -322,12 +231,6 @@
 #define CMD_GET_REACTIVE_R2_T3                  0x0100060803FF
 #define CMD_GET_REACTIVE_R2_T4                  0x0100060804FF
 
-///short name
-#define CMD_GET_REACTIVE_R2_SUMM_SN             0x0608
-#define CMD_GET_REACTIVE_R2_T1_SN               0x0620
-#define CMD_GET_REACTIVE_R2_T2_SN               0x0638
-#define CMD_GET_REACTIVE_R2_T3_SN               0x0650
-#define CMD_GET_REACTIVE_R2_T4_SN               0x0668
 
 //R-A-   R3
 #define CMD_GET_REACTIVE_R3_SUMM                0x0100070800FF
@@ -336,12 +239,6 @@
 #define CMD_GET_REACTIVE_R3_T3                  0x0100070803FF
 #define CMD_GET_REACTIVE_R3_T4                  0x0100070804FF
 
-///short name
-#define CMD_GET_REACTIVE_R3_SUMM_SN             0x0708
-#define CMD_GET_REACTIVE_R3_T1_SN               0x0720
-#define CMD_GET_REACTIVE_R3_T2_SN               0x0738
-#define CMD_GET_REACTIVE_R3_T3_SN               0x0750
-#define CMD_GET_REACTIVE_R3_T4_SN               0x0768
 
 
 //R-A+    R4
@@ -350,13 +247,6 @@
 #define CMD_GET_REACTIVE_R4_T2                  0x0100080802FF
 #define CMD_GET_REACTIVE_R4_T3                  0x0100080803FF
 #define CMD_GET_REACTIVE_R4_T4                  0x0100080804FF
-
-///short name
-#define CMD_GET_REACTIVE_R4_SUMM_SN             0x0808
-#define CMD_GET_REACTIVE_R4_T1_SN               0x0820
-#define CMD_GET_REACTIVE_R4_T2_SN               0x0838
-#define CMD_GET_REACTIVE_R4_T3_SN               0x0850
-#define CMD_GET_REACTIVE_R4_T4_SN               0x0868
 
 
 ////EOD //class_id: 3, attr: 2
@@ -450,19 +340,17 @@
 
 //Зріз потужності за 30 хв //class_id:
 #define CMD_GET_PWR_ACTIVE_SUMM                 0x01000F0400FF
-#define CMD_GET_PWR_ACTIVE_SUMM_SN              0x01000F0500FF
+//A+-
+#define CMD_GET_PWR_ACTIVE_SUMM_7               0x0100100700FF //if more > 0 it is P+, if it less than 0 P- LGZ
 
 //A+
 #define CMD_GET_PWR_ACTIVE_IMPORT_SUMM          0x0100010400FF
-#define CMD_GET_PWR_ACTIVE_IMPORT_SUMM_SN       0x0100010500FF
 
 //A-
 #define CMD_GET_PWR_ACTIVE_EXPORT_SUMM          0x0100020400FF
-#define CMD_GET_PWR_ACTIVE_EXPORT_SUMM_SN       0x0100020500FF
 
-
-#define CMD_GET_PWR_REACTIVE_RIMPORT_SUMM_SN    0x0100030500FF
-#define CMD_GET_PWR_REACTIVE_REXPORT_SUMM_SN    0x0100040500FF
+//R+-
+#define CMD_GET_PWR_REACTIVE_SUMM_7             0x0100830700FF //if more > 0 it is Q+, if it less than 0 Q- LGZ
 
 //R+Ax
 #define CMD_GET_PWR_REACTIVE_AXIMPORT_SUMM      0x0100030400FF
@@ -533,40 +421,10 @@
 #define CMD_GET_INSTANT_SUMM_COSF               0x01000D0700FF
 #define CMD_GET_INSTANT_SUMM_P                  0x0100100700FF
 
-
-///short names
-#define CMD_GET_INSTANT_SUMM_FREQUENCY_SN       0x5208 //for scaller and units +2 to obis
-#define CMD_GET_INSTANT_L1_Q_PLUS_SN            0x4008
-#define CMD_GET_INSTANT_L1_Q_MINUS_SN           0x4108
-#define CMD_GET_INSTANT_L1_I_SN                 0x4B08
-#define CMD_GET_INSTANT_L1_U_SN                 0x4F08
-#define CMD_GET_INSTANT_L1_COSF_SN              0x4208
-#define CMD_GET_INSTANT_L1_P_SN                 0x3F08
-
-#define CMD_GET_INSTANT_L2_Q_PLUS_SN            0x4408
-#define CMD_GET_INSTANT_L2_Q_MINUS_SN           0x4508
-#define CMD_GET_INSTANT_L2_I_SN                 0x4C08
-#define CMD_GET_INSTANT_L2_U_SN                 0x5008
-#define CMD_GET_INSTANT_L2_COSF_SN              0x4608
-#define CMD_GET_INSTANT_L2_P_SN                 0x4308
-
-#define CMD_GET_INSTANT_L3_Q_PLUS_SN            0x4808
-#define CMD_GET_INSTANT_L3_Q_MINUS_SN           0x4908
-#define CMD_GET_INSTANT_L3_I_SN                 0x4D08
-#define CMD_GET_INSTANT_L3_U_SN                 0x5108
-#define CMD_GET_INSTANT_L3_COSF_SN              0x4A08
-#define CMD_GET_INSTANT_L3_P_SN                 0x4708
-
-
-#define CMD_GET_INSTANT_SUMM_I_SN               0x4A08// не підтверджено, вирахувано по закономірності
-#define CMD_GET_INSTANT_SUMM_U_SN               0x4E08// не підтверджено, вирахувано по закономірності
-#define CMD_GET_INSTANT_SUMM_COSF_SN            0x3E08
-#define CMD_GET_INSTANT_SUMM_P_SN               0x3B08
-
+#define CMD_GET_INSTANT_SUMM_Q                  0x0100830700FF
 
 //relay
 #define CMD_GSET_RELAY                           0x000060030AFF
-#define CMD_GSET_RELAY_SN                        0x9F08
 
 //параметризація
 #define CMD_SET_ARRAY_1                         0x000065000001// class_id: 3, attr: 2

@@ -41,16 +41,17 @@ public:
     static void moveCache2hash(const QVariantHash &h, const QList<QByteArray> &commandCodeH, QVariantHash &hashTmpData, quint16 &step, int &error_counter, const bool &verboseMode, LastErrStruct &lastErrS);
 
 
-    static QByteArray arrMessWriteSN(ObisList &lastObisList, const quint64 &obis, const quint16 &attr, const QByteArray &arrh);
+    static QByteArray arrMessageWriteSN(ObisList &lastObisList, const quint64 &obis, const quint16 &attr, const QByteArray &arrh);
 
-    static QByteArray arrMessWrite(ObisList &lastObisList, const quint64 &obis, const quint16 &attr, const QByteArray &arrh);
+    static QByteArray arrMessageWrite(ObisList &lastObisList, const quint64 &obis, const quint16 &attr, const QByteArray &arrh);
 
-    static QByteArray arrMessXtend(ObisList &lastObisList, const ObisList &obisList, const AttributeList &attributeList, const bool &lastIsShortDlms);//Get.request
+    static QByteArray arrMessageXtend(ObisList &lastObisList, const ObisList &obisList, const AttributeList &attributeList, const bool &lastIsShortDlms);//Get.request
 
-    static QByteArray arrMessXtendSN(ObisList &lastObisList, const ObisList &obisList, const AttributeList &attributeList);//Get.request
+    static QByteArray arrMessageXtendSN(ObisList &lastObisList, const ObisList &obisList, const AttributeList &attributeList);//Get.request
 
 
-    static QByteArray obis2classId(const quint64 &obis);
+    static QByteArray obis2classIdExt(const quint64 &obis);
+
     static quint16 obis2classIdsubObis(quint64 obis);
 
 
@@ -69,7 +70,16 @@ public:
     static QDateTime fixDstShiftSmart25hour(const QDateTime &indt);
 
 
+    static QByteArray getValidPassword(const QVariantHash &hashConstData, const bool &retInHex, const QByteArray &defPasswd);
 
+    static bool ignoreThisObisCodeTariff(const quint64 &obisCode, bool &codeIsValid, QString &tstr);
+
+    static bool ignoreThisObisCodeVoltage(const quint64 &obisCode, const bool &isSinglePhase, bool &codeIsValid, QString &tstr);
+
+    static bool ignoreThisObisCodeLoadProfile(const quint64 &obisCode, bool &codeIsValid, QString &tstr);
+
+
+    static QByteArray addObis4writeDtExt(ObisList &lastObisList, const quint64 &obisln, const quint16 &obissn, const bool &lastMeterIsShortDlms);
 
 };
 
