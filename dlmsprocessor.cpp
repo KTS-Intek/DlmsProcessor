@@ -132,11 +132,21 @@ bool DlmsProcessor::addShortName2obisCode(const quint16 &shortname, const quint6
 {
     bool ok;
     QString enrgk;
-    if(!DlmsHelper::ignoreThisObisCodeTariff(obiscode, ok, enrgk)){
+    QString removeThisKeyStr;
+    if(!DlmsHelper::ignoreThisObisCodeTariff(obiscode, ok, enrgk, removeThisKeyStr)){
         DLMSShortNames onesett;
         onesett.enrgKey = enrgk;
         onesett.shortname = shortname;
         lastShortNames.lastObis2shortNames.obis2shortNames.insert(obiscode, onesett);
+
+
+        if(!removeThisKeyStr.isEmpty() && lastShortNames.lastObis2shortNames.enrgKey2obis.contains(removeThisKeyStr)){
+            const quint64 obis2remove = lastShortNames.lastObis2shortNames.enrgKey2obis.take(removeThisKeyStr);
+//            const DLMSShortNames sett2remove =
+                    lastShortNames.lastObis2shortNames.obis2shortNames.remove(obis2remove);
+
+
+        }
     }
     return ok;
 }

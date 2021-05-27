@@ -937,7 +937,7 @@ QByteArray DlmsHelper::getValidPassword(const QVariantHash &hashConstData, const
 }
 //----------------------------------------------------------------------------------
 
-bool DlmsHelper::ignoreThisObisCodeTariff(const quint64 &obisCode, bool &codeIsValid, QString &tstr)
+bool DlmsHelper::ignoreThisObisCodeTariff(const quint64 &obisCode, bool &codeIsValid, QString &tstr, QString &removeThisKeyStr)
 {
     tstr.clear();
     codeIsValid = true;
@@ -968,17 +968,17 @@ bool DlmsHelper::ignoreThisObisCodeTariff(const quint64 &obisCode, bool &codeIsV
 //R+
 
 //
-    case CMD_GET_REACTIVE_RIMPORT_SUMM : tstr = "T0_R+"     ; break;
-    case CMD_GET_REACTIVE_RIMPORT_T1   : tstr = "T1_R+"     ; break;
-    case CMD_GET_REACTIVE_RIMPORT_T2   : tstr = "T2_R+"     ; break;
-    case CMD_GET_REACTIVE_RIMPORT_T3   : tstr = "T3_R+"     ; break;
-    case CMD_GET_REACTIVE_RIMPORT_T4   : tstr = "T4_R+"     ; break;
+    case CMD_GET_REACTIVE_RIMPORT_SUMM : tstr = "T0_R+"     ; removeThisKeyStr = QString("DLMS_%1").arg(tstr); break;
+    case CMD_GET_REACTIVE_RIMPORT_T1   : tstr = "T1_R+"     ; removeThisKeyStr = QString("DLMS_%1").arg(tstr); break;
+    case CMD_GET_REACTIVE_RIMPORT_T2   : tstr = "T2_R+"     ; removeThisKeyStr = QString("DLMS_%1").arg(tstr); break;
+    case CMD_GET_REACTIVE_RIMPORT_T3   : tstr = "T3_R+"     ; removeThisKeyStr = QString("DLMS_%1").arg(tstr); break;
+    case CMD_GET_REACTIVE_RIMPORT_T4   : tstr = "T4_R+"     ; removeThisKeyStr = QString("DLMS_%1").arg(tstr); break;
 
-    case CMD_GET_REACTIVE_REXPORT_SUMM : tstr = "T0_R-"     ; break;
-    case CMD_GET_REACTIVE_REXPORT_T1   : tstr = "T1_R-"     ; break;
-    case CMD_GET_REACTIVE_REXPORT_T2   : tstr = "T2_R-"     ; break;
-    case CMD_GET_REACTIVE_REXPORT_T3   : tstr = "T3_R-"     ; break;
-    case CMD_GET_REACTIVE_REXPORT_T4   : tstr = "T4_R-"     ; break;
+    case CMD_GET_REACTIVE_REXPORT_SUMM : tstr = "T0_R-"     ; removeThisKeyStr = QString("DLMS_%1").arg(tstr); break;
+    case CMD_GET_REACTIVE_REXPORT_T1   : tstr = "T1_R-"     ; removeThisKeyStr = QString("DLMS_%1").arg(tstr); break;
+    case CMD_GET_REACTIVE_REXPORT_T2   : tstr = "T2_R-"     ; removeThisKeyStr = QString("DLMS_%1").arg(tstr); break;
+    case CMD_GET_REACTIVE_REXPORT_T3   : tstr = "T3_R-"     ; removeThisKeyStr = QString("DLMS_%1").arg(tstr); break;
+    case CMD_GET_REACTIVE_REXPORT_T4   : tstr = "T4_R-"     ; removeThisKeyStr = QString("DLMS_%1").arg(tstr); break;
 
 
 

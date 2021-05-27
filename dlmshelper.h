@@ -72,7 +72,7 @@ public:
 
     static QByteArray getValidPassword(const QVariantHash &hashConstData, const bool &retInHex, const QByteArray &defPasswd);
 
-    static bool ignoreThisObisCodeTariff(const quint64 &obisCode, bool &codeIsValid, QString &tstr);
+    static bool ignoreThisObisCodeTariff(const quint64 &obisCode, bool &codeIsValid, QString &tstr, QString &removeThisKeyStr);
 
     static bool ignoreThisObisCodeVoltage(const quint64 &obisCode, const bool &isSinglePhase, bool &codeIsValid, QString &tstr);
 
