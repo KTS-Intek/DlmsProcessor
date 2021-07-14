@@ -122,6 +122,7 @@ public:
     void addDefaultReadingParams(QVariantHash &hashMessage);
 
 
+
     void resetHDLCglobalVariables();
 
     bool messageIsValid(const QByteArray &readArr, QVariantList &listMeterMesageVar, QList<QByteArray> &commandCodeH, const QByteArray &lastAddrH, quint8 &frameType, quint8 &errCode, const QByteArray lastSrcAddr = "");
@@ -140,8 +141,11 @@ public:
 
 
 
-    QByteArray crcCalc(const QByteArray &destSN, const quint8 &frameType, const quint8 &messCounterRRR, const quint8 &messCounterSSS, const QByteArray &arrMessage) ;
-    QByteArray crcCalc(const QVariantHash &hashConstData, const quint8 &frameType, const quint8 &messCounterRRR, const quint8 &messCounterSSS, const QByteArray &arrMessage) ;
+
+    QByteArray crcCalcExt(const QByteArray &arrAddrHex, const quint8 &frameType, const quint8 &messageCounterRRR, const quint8 &messageCounterSSS, const QByteArray &arrMessage) ;
+
+    QByteArray crcCalc(const QByteArray &destSN, const quint8 &frameType, const quint8 &messageCounterRRR, const quint8 &messageCounterSSS, const QByteArray &arrMessage) ;
+    QByteArray crcCalc(const QVariantHash &hashConstData, const quint8 &frameType, const quint8 &messageCounterRRR, const quint8 &messageCounterSSS, const QByteArray &arrMessage) ;
 
     QByteArray crcCalcFrameI(const QVariantHash &hashConstData, const ObisList &obisList, const AttributeList &attributeList) ;
 

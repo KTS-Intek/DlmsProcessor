@@ -27,8 +27,9 @@ int DlmsHelper::datatype2len(const quint16 &dataType)
     case DLMS_DATA_TYPE_EMPTY_LGZ_SN   : r = 0; break;
 
     case DLMS_DATA_FUCKING_UNKDATA      : r = 0; break;
-    case DLMS_DATA_RELAY_FCKN_OK        : r = 0; break;
+    case DLMS_DATA_FUCKING_UNKDATA_2    : r = 0; break;
 
+    case DLMS_DATA_RELAY_FCKN_OK        : r = 0; break;
 //    case DLMS_DATA_TYPE_STRUCTURE       : r = 5; break;
 
     default:{
@@ -103,9 +104,14 @@ QVariant DlmsHelper::datatype2normal(const quint16 &dataType, const QByteArray &
         //    case DLMS_DATA_TYPE_STRUCTURE       : r = arrStructure2map(arr)     ; break; //02 0F FF 16 1E
         //    case DLMS_DATA_TYPE_COMPACT_ARRAY   : break;
 
+            case DLMS_DATA_FUCKING_UNKDATA_2:
+            case DLMS_DATA_FUCKING_UNKDATA:
             case DLMS_DATA_TYPE_EMPTY_LGZ_SN:
                 r = dataType;
                 break;
+
+
+
 
             default:{
                 qDebug() << "datatype2normal=" << dataType << arrh;
@@ -496,6 +502,29 @@ QByteArray DlmsHelper::arrMessageXtend(ObisList &lastObisList, const ObisList &o
     if(lastIsShortDlms)
         return arrMessageXtendSN(lastObisList, obisList, attributeList);
 
+
+
+
+
+    QList<QByteArray> cidl;
+    for(int i = 0, iMax = obisList.size(); i < iMax; i++){
+        //<2byte class_id> <6byte obis code> <2 byte attribute>
+//        QByteArray a = ;// + QByteArray::number(obisList.at(i), 16).rightJustified(12, '0');
+//        a.append( QByteArray::number( (i < iMax2) ? attributeList.at(i) : 1 ).rightJustified(2, '0') + "00");
+
+        cidl.append(obis2classIdExt(obisList.at(i)));
+        qDebug() << "xTend a=" << cidl.last();
+
+    }
+
+
+    return arrMessageXtendExt(lastObisList, obisList, cidl, attributeList);
+
+}
+
+QByteArray DlmsHelper::arrMessageXtendExt(ObisList &lastObisList, const ObisList &obisList, const QList<QByteArray> &cidl, const AttributeList &attributeList)
+{
+
     const int obisCounter = obisList.size();
     if(obisCounter < 1)
         return "";
@@ -515,12 +544,17 @@ QByteArray DlmsHelper::arrMessageXtend(ObisList &lastObisList, const ObisList &o
         payLoad.prepend(a);// a.append(payLoad);
     }
 
-    for(int i = 0, iMax = obisCounter, iMax2 = attributeList.size(); i < iMax; i++){
+    for(int i = 0, iMax = obisCounter, iMax2 = attributeList.size(), imax3 = cidl.size(); i < iMax; i++){
         //<2byte class_id> <6byte obis code> <2 byte attribute>
-        QByteArray a = obis2classIdExt(obisList.at(i)) + QByteArray::number(obisList.at(i), 16).rightJustified(12, '0');
-        a.append( QByteArray::number( (i < iMax2) ? attributeList.at(i) : 1 ).rightJustified(2, '0') + "00");
-        payLoad.append(a);
-        qDebug() << "xTend a=" << a;
+
+        payLoad.append((i < imax3) ? cidl.at(i) : "0000");//class id
+        payLoad.append(QByteArray::number(obisList.at(i), 16).rightJustified(12, '0'));//obis code
+        payLoad.append(QByteArray::number( (i < iMax2) ? attributeList.at(i) : 1 ).rightJustified(2, '0') + "00");//attribute
+
+//        QByteArray a = (i < imax3) ? cidl.at(i) : "0000";// obis2classIdExt(obisList.at(i)) + QByteArray::number(obisList.at(i), 16).rightJustified(12, '0');
+//        a.append( QByteArray::number( (i < iMax2) ? attributeList.at(i) : 1 ).rightJustified(2, '0') + "00");
+//        payLoad.append(a);
+//        qDebug() << "xTend a=" << a;
 
     }
     qDebug() << "xTend mess=" << payLoad;
@@ -640,6 +674,8 @@ QByteArray DlmsHelper::obis2classIdExt(const quint64 &obis)
     case CMD_GET_INSTANT_L1_U           :
     case CMD_GET_INSTANT_L1_COSF        :
     case CMD_GET_INSTANT_L1_P           :
+    case CMD_GET_INSTANT_L1_P_PLUS      :
+    case CMD_GET_INSTANT_L1_P_MINUS     :
 
     case CMD_GET_INSTANT_L2_Q_PLUS      :
     case CMD_GET_INSTANT_L2_Q_MINUS     :
@@ -647,6 +683,8 @@ QByteArray DlmsHelper::obis2classIdExt(const quint64 &obis)
     case CMD_GET_INSTANT_L2_U           :
     case CMD_GET_INSTANT_L2_COSF        :
     case CMD_GET_INSTANT_L2_P           :
+    case CMD_GET_INSTANT_L2_P_PLUS      :
+    case CMD_GET_INSTANT_L2_P_MINUS     :
 
     case CMD_GET_INSTANT_L3_Q_PLUS      :
     case CMD_GET_INSTANT_L3_Q_MINUS     :
@@ -654,6 +692,9 @@ QByteArray DlmsHelper::obis2classIdExt(const quint64 &obis)
     case CMD_GET_INSTANT_L3_U           :
     case CMD_GET_INSTANT_L3_COSF        :
     case CMD_GET_INSTANT_L3_P           :
+    case CMD_GET_INSTANT_L3_P_PLUS      :
+    case CMD_GET_INSTANT_L3_P_MINUS     :
+
 
     case CMD_GET_INSTANT_SUMM_I         :
     case CMD_GET_INSTANT_SUMM_U         :
@@ -1052,6 +1093,8 @@ bool DlmsHelper::ignoreThisObisCodeVoltage(const quint64 &obisCode, const bool &
         case CMD_GET_INSTANT_L1_U           : tstr = "UA"                        ; break;
         case CMD_GET_INSTANT_L1_COSF        : tstr = "cos_fA"                    ; break;
         case CMD_GET_INSTANT_L1_P           : tstr = "PA"       ;  break;//scaler =  0.001; break;
+        case CMD_GET_INSTANT_L1_P_PLUS      : tstr = "DLMS_PA"       ;  break;//scaler =  0.001; break;
+        case CMD_GET_INSTANT_L1_P_MINUS     : tstr = "DLMS_PA"       ;  break;//scaler =  0.001; break;
 
         case CMD_GET_INSTANT_L2_Q_PLUS      : tstr = "DLMS_QB"  ; break;// scaler =  0.001; break;
         case CMD_GET_INSTANT_L2_Q_MINUS     : tstr = "DLMS_QB"  ; break;// scaler = -0.001; break;
@@ -1059,6 +1102,9 @@ bool DlmsHelper::ignoreThisObisCodeVoltage(const quint64 &obisCode, const bool &
         case CMD_GET_INSTANT_L2_U           : tstr = "UB"                        ; break;
         case CMD_GET_INSTANT_L2_COSF        : tstr = "cos_fB"                    ; break;
         case CMD_GET_INSTANT_L2_P           : tstr = "PB"       ; break;// scaler =  0.001; break;
+        case CMD_GET_INSTANT_L2_P_PLUS      : tstr = "DLMS_PB"       ;  break;//scaler =  0.001; break;
+        case CMD_GET_INSTANT_L2_P_MINUS     : tstr = "DLMS_PB"       ;  break;//scaler =  0.001; break;
+
 
         case CMD_GET_INSTANT_L3_Q_PLUS      : tstr = "DLMS_QC"  ; break;// scaler =  0.001; break;
         case CMD_GET_INSTANT_L3_Q_MINUS     : tstr = "DLMS_QC"  ; break;// scaler = -0.001; break;
@@ -1066,7 +1112,8 @@ bool DlmsHelper::ignoreThisObisCodeVoltage(const quint64 &obisCode, const bool &
         case CMD_GET_INSTANT_L3_U           : tstr = "UC"                        ; break;
         case CMD_GET_INSTANT_L3_COSF        : tstr = "cos_fC"                    ; break;
         case CMD_GET_INSTANT_L3_P           : tstr = "PC"       ; break;// scaler =  0.001; break;
-
+        case CMD_GET_INSTANT_L3_P_PLUS      : tstr = "DLMS_PC"       ;  break;//scaler =  0.001; break;
+        case CMD_GET_INSTANT_L3_P_MINUS     : tstr = "DLMS_PC"       ;  break;//scaler =  0.001; break;
 
         default: ignoreCode = true; codeIsValid = false; break;
         }
@@ -1109,7 +1156,7 @@ bool DlmsHelper::ignoreThisObisCodeLoadProfile(const quint64 &obisCode, bool &co
 }
 
 //------------------------------------------------------------------------------------------
-QByteArray DlmsHelper::addObis4writeDtExt(ObisList &lastObisList, const quint64 &obisln, const quint16 &obissn, const bool &lastMeterIsShortDlms)
+QByteArray DlmsHelper::addObis4writeDtExt(ObisList &lastObisList, const quint64 &obisln, const quint16 &obissn, const bool &lastMeterIsShortDlms, const QByteArray &rightarr)
 {
 
     //    quint64 obis, quint16 &attr, QByteArray &arrh
@@ -1118,7 +1165,7 @@ QByteArray DlmsHelper::addObis4writeDtExt(ObisList &lastObisList, const quint64 
     const quint16 attr = 2;
 
     //yy yy MM dd dow hh mm ss FF FF FF FF
-    const QByteArray arrh = "09 0C" + dt2arr(QDateTime::currentDateTime().addSecs(4));
+    const QByteArray arrh = "09 0C" + dt2arr(QDateTime::currentDateTime().addSecs(4), rightarr);
 
 
     if(lastMeterIsShortDlms){

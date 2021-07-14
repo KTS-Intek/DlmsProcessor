@@ -40,6 +40,8 @@
 #define ERR_CHECK_AUTHORIZE     0x55
 #define ERR_WRITE_DONE          0x56
 
+#define ERR_DLMS_BAD_REQUEST         0x103 //ACE
+#define ERR_DLMS_BAD_REQUEST_2       0x10D //ACE
 
 
 #define DLMS_CLASS_ID_DATA                      0x1//v0 4.3.1       class_id = 1
@@ -115,7 +117,10 @@
 
 
 #define DLMS_DATA_FUCKING_UNKDATA       0x010B
+#define DLMS_DATA_FUCKING_UNKDATA_2     0x010D
+
 #define DLMS_DATA_RELAY_FCKN_OK         0x0100
+
 
 #define DLMS_DATA_TYPE_ARRAY            0x01 //???
 #define DLMS_DATA_TYPE_STRUCTURE        0x02
@@ -402,6 +407,11 @@
 #define CMD_GET_INSTANT_L1_COSF                 0x0100210700FF
 #define CMD_GET_INSTANT_L1_P                    0x0100240700FF
 
+#define CMD_GET_INSTANT_L1_P_PLUS               0x0100150700FF
+#define CMD_GET_INSTANT_L1_P_MINUS              0x0100160700FF
+
+
+
 #define CMD_GET_INSTANT_L2_Q_PLUS               0x01002B0700FF
 #define CMD_GET_INSTANT_L2_Q_MINUS              0x01002C0700FF
 #define CMD_GET_INSTANT_L2_I                    0x0100330700FF
@@ -409,12 +419,22 @@
 #define CMD_GET_INSTANT_L2_COSF                 0x0100350700FF
 #define CMD_GET_INSTANT_L2_P                    0x0100380700FF
 
+#define CMD_GET_INSTANT_L2_P_PLUS               0x0100290700FF
+#define CMD_GET_INSTANT_L2_P_MINUS              0x01002A0700FF
+
+
+
+
 #define CMD_GET_INSTANT_L3_Q_PLUS               0x01003F0700FF
 #define CMD_GET_INSTANT_L3_Q_MINUS              0x0100400700FF
 #define CMD_GET_INSTANT_L3_I                    0x0100470700FF
 #define CMD_GET_INSTANT_L3_U                    0x0100480700FF
 #define CMD_GET_INSTANT_L3_COSF                 0x0100490700FF
 #define CMD_GET_INSTANT_L3_P                    0x01004C0700FF
+
+#define CMD_GET_INSTANT_L3_P_PLUS               0x01003D0700FF
+#define CMD_GET_INSTANT_L3_P_MINUS              0x01003E0700FF
+
 
 #define CMD_GET_INSTANT_SUMM_I                  0x01000B0700FF
 #define CMD_GET_INSTANT_SUMM_U                  0x01000C0700FF

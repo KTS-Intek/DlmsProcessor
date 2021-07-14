@@ -47,6 +47,8 @@ public:
 
     static QByteArray arrMessageXtend(ObisList &lastObisList, const ObisList &obisList, const AttributeList &attributeList, const bool &lastIsShortDlms);//Get.request
 
+    static QByteArray arrMessageXtendExt(ObisList &lastObisList, const ObisList &obisList, const QList<QByteArray> &cidl, const AttributeList &attributeList);//Get.request
+
     static QByteArray arrMessageXtendSN(ObisList &lastObisList, const ObisList &obisList, const AttributeList &attributeList);//Get.request
 
 
@@ -79,7 +81,7 @@ public:
     static bool ignoreThisObisCodeLoadProfile(const quint64 &obisCode, bool &codeIsValid, QString &tstr);
 
 
-    static QByteArray addObis4writeDtExt(ObisList &lastObisList, const quint64 &obisln, const quint16 &obissn, const bool &lastMeterIsShortDlms);
+    static QByteArray addObis4writeDtExt(ObisList &lastObisList, const quint64 &obisln, const quint16 &obissn, const bool &lastMeterIsShortDlms, const QByteArray &rightarr);
 
 };
 

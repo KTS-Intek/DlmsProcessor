@@ -606,33 +606,9 @@ void DlmsProcessor::topArrayChecks(const bool &hasByteA8, QByteArray &meterMessH
 
 //----------------------------------------------------------------------------------
 
-QByteArray DlmsProcessor::crcCalc(const QByteArray &destSN, const quint8 &frameType, const quint8 &messCounterRRR, const quint8 &messCounterSSS, const QByteArray &arrMessage)
+QByteArray DlmsProcessor::crcCalcExt(const QByteArray &arrAddrHex, const quint8 &frameType, const quint8 &messageCounterRRR, const quint8 &messageCounterSSS, const QByteArray &arrMessage)
 {
     QByteArray arrHeader("");
-
-    QByteArray arrAddrHex(QByteArray::fromHex("00 01 FE FF"));
-
-    if(true){// !destSN.isEmpty()){ //02092443
-        //destSN = hhhh:llll (dec)
-        bool okL;
-        quint16 destLow = destSN.toUInt(&okL) + 1000;
-        if(destSN.isEmpty()){
-            destLow = 0x3FFF;
-            okL = true;
-        }
-        if(!okL || destLow > 0x3FFF)
-            return "";
-
-        destLow = destLow << 1;
-        destLow |= 1 << 0;
-
-        QByteArray destLowArr = QByteArray::number(destLow, 16).rightJustified(4, '0');
-
-        quint16 destLowLeft = destLowArr.left(2).toUInt(&okL, 16);
-        destLowLeft = destLowLeft << 1;
-        //logical meter addr = 0x0001 > 0x0002
-        arrAddrHex = "0002" + QByteArray::number(destLowLeft, 16).rightJustified(2, '0') + destLowArr.right(2);
-    }
 
     lastExchangeState.lastHiLoHex = arrAddrHex;
     arrHeader.append(arrAddrHex); //meter (dest) addr
@@ -644,8 +620,8 @@ QByteArray DlmsProcessor::crcCalc(const QByteArray &destSN, const quint8 &frameT
 
     case HDLC_FRAME_I:{
 
-        const QBitArray rrr = ConvertAtype::uint8ToBitArray(messCounterRRR);
-        const QBitArray sss = ConvertAtype::uint8ToBitArray(messCounterSSS);
+        const QBitArray rrr = ConvertAtype::uint8ToBitArray(messageCounterRRR);
+        const QBitArray sss = ConvertAtype::uint8ToBitArray(messageCounterSSS);
 
         QBitArray bitArr = ConvertAtype::uint8ToBitArray(frameType);//0x10
         bitArr.setBit(4, true);
@@ -661,7 +637,7 @@ QByteArray DlmsProcessor::crcCalc(const QByteArray &destSN, const quint8 &frameT
 
     case HDLC_FRAME_RR:{
 
-        const QBitArray rrr = ConvertAtype::uint8ToBitArray(messCounterRRR);
+        const QBitArray rrr = ConvertAtype::uint8ToBitArray(messageCounterRRR);
 
         QBitArray bitArr = ConvertAtype::uint8ToBitArray(frameType);
         bitArr.setBit(4, true);
@@ -709,9 +685,42 @@ QByteArray DlmsProcessor::crcCalc(const QByteArray &destSN, const quint8 &frameT
 
 //----------------------------------------------------------------------------------
 
-QByteArray DlmsProcessor::crcCalc(const QVariantHash &hashConstData, const quint8 &frameType, const quint8 &messCounterRRR, const quint8 &messCounterSSS, const QByteArray &arrMessage)
+QByteArray DlmsProcessor::crcCalc(const QByteArray &destSN, const quint8 &frameType, const quint8 &messageCounterRRR, const quint8 &messageCounterSSS, const QByteArray &arrMessage)
 {
-    return crcCalc(hashConstData.value("NI").toByteArray(), frameType, messCounterRRR, messCounterSSS, arrMessage);
+
+    QByteArray arrAddrHex(QByteArray::fromHex("00 01 FE FF"));
+
+    if(true){// !destSN.isEmpty()){ //02092443
+        //destSN = hhhh:llll (dec)
+        bool okL;
+        quint16 destLow = destSN.toUInt(&okL) + 1000;
+        if(destSN.isEmpty()){
+            destLow = 0x3FFF;
+            okL = true;
+        }
+        if(!okL || destLow > 0x3FFF)
+            return "";
+
+        destLow = destLow << 1;
+        destLow |= 1 << 0;
+
+        QByteArray destLowArr = QByteArray::number(destLow, 16).rightJustified(4, '0');
+
+        quint16 destLowLeft = destLowArr.left(2).toUInt(&okL, 16);
+        destLowLeft = destLowLeft << 1;
+        //logical meter addr = 0x0001 > 0x0002
+        arrAddrHex = "0002" + QByteArray::number(destLowLeft, 16).rightJustified(2, '0') + destLowArr.right(2);
+    }
+
+    return crcCalcExt(arrAddrHex, frameType, messageCounterRRR, messageCounterSSS, arrMessage);
+
+}
+
+//----------------------------------------------------------------------------------
+
+QByteArray DlmsProcessor::crcCalc(const QVariantHash &hashConstData, const quint8 &frameType, const quint8 &messageCounterRRR, const quint8 &messageCounterSSS, const QByteArray &arrMessage)
+{
+    return crcCalc(hashConstData.value("NI").toByteArray(), frameType, messageCounterRRR, messageCounterSSS, arrMessage);
 
 }
 
