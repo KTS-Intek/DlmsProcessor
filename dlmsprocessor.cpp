@@ -228,6 +228,9 @@ bool DlmsProcessor::messageIsValid(const QByteArray &readArr, QVariantList &list
 
     const QByteArray arrHex = getArrayHex(readArr, lastSrcAddr, lastAddrH, endOfRRframes, need2useBuffer, frameType);
 
+    if(arrHex.isEmpty())
+        return false;//Gama had issue here with GPRS, it can't be empty
+
     const bool hasByteA8 = need2useBuffer;
 
     QByteArray meterMessH = arrHex.mid(16);
@@ -344,7 +347,7 @@ QByteArray DlmsProcessor::getArrayHex(const QByteArray &readArr, const QByteArra
     }
 
     frameType = arrHex.mid(14,2).toUShort(0,16);
-    if(frameType < 1 || frameType > 0xFE){
+    if(frameType < 1 || frameType > 0xFE ){
         if(verboseMode) qDebug() << "frameType not valid " << frameType << arrHex.mid(14,2).toUShort(0,16) << arrHex.mid(14,2);
         return  QByteArray();
     }
@@ -471,8 +474,8 @@ QVariantList DlmsProcessor::processCachedData(int &obisCounter, QByteArray &mete
     ob = 0;
     for( ; ob < obisCounter; ob++){
 
-        if(obisCounter == 8)
-            qDebug() << "wait for fucking bug ";
+//        if(obisCounter == 8)
+//            qDebug() << "wait for fucking bug ";
 
         bool okc, okl;
         const quint16 datatype = meterMessH.left(dataTypeLen).toUInt(&okc, 16);

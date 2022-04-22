@@ -114,13 +114,15 @@ QVariant DlmsHelper::datatype2normal(const quint16 &dataType, const QByteArray &
 
 
             default:{
-                qDebug() << "datatype2normal=" << dataType << arrh;
+                if(verboseMode)
+                    qDebug() << "datatype2normal=" << dataType << arrh;
                 r = arr;
                 if(verboseMode)
                     qDebug() << "unknown type " << arrh << dataType << r;
                 break;}
             }
             if(!ok){
+                if(verboseMode)
                 qDebug() << "datatype2normal bad conversion " << r << arrh << ok << dataType;
                 r = QVariant();
             }
@@ -513,7 +515,7 @@ QByteArray DlmsHelper::arrMessageXtend(ObisList &lastObisList, const ObisList &o
 //        a.append( QByteArray::number( (i < iMax2) ? attributeList.at(i) : 1 ).rightJustified(2, '0') + "00");
 
         cidl.append(obis2classIdExt(obisList.at(i)));
-        qDebug() << "xTend a=" << cidl.last();
+//        qDebug() << "xTend a=" << cidl.last();
 
     }
 
@@ -557,7 +559,7 @@ QByteArray DlmsHelper::arrMessageXtendExt(ObisList &lastObisList, const ObisList
 //        qDebug() << "xTend a=" << a;
 
     }
-    qDebug() << "xTend mess=" << payLoad;
+//    qDebug() << "xTend mess=" << payLoad;
     lastObisList = obisList;
     return payLoad;
 }
@@ -778,10 +780,10 @@ QByteArray DlmsHelper::obis2classIdExt(const quint64 &obis)
             break;
 
 
-        qDebug() << " ";
-        qDebug() << "======================================================================================";
-        qDebug() << "--------------- obis2classId unknown obis " << obis << QByteArray::number(obis, 16);
-        qDebug() << " ";
+//        qDebug() << " ";
+//        qDebug() << "======================================================================================";
+//        qDebug() << "--------------- obis2classId unknown obis " << obis << QByteArray::number(obis, 16);
+//        qDebug() << " ";
 //        dlmsVersion.append("00");
         break;}
     }
@@ -801,7 +803,7 @@ quint16 DlmsHelper::obis2classIdsubObis(quint64 obis)
     QByteArray arr = QByteArray::number(obis, 16);
 
     if(arr.right(2).toUpper() == "FF"){
-        qDebug() << "obis2classIdsubObis obis " << arr.toUpper();
+//        qDebug() << "obis2classIdsubObis obis " << arr.toUpper();
         return cid;
     }
 
@@ -829,8 +831,8 @@ quint16 DlmsHelper::obis2classIdsubObis(quint64 obis)
     default:{
 
 
-        qDebug() << "--------------- obis2classIdsubobis unknown obis " << obis << QByteArray::number(obis, 16);
-        qDebug() << " ";
+//        qDebug() << "--------------- obis2classIdsubobis unknown obis " << obis << QByteArray::number(obis, 16);
+//        qDebug() << " ";
 //        dlmsVersion.append("00");
         break;}
     }
