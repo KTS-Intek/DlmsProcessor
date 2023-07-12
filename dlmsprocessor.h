@@ -21,29 +21,7 @@ class DlmsProcessor : public QObject
 public:
     explicit DlmsProcessor(QObject *parent = nullptr);
 
-    struct DLMSExchangeState
-    {
-        LastErrStruct lastErrS;
-        QByteArray lastHiLoHex;
-    //    QString lastErrorStr, lastWarning;
-
-        QByteArray lastMeterH;
-        int lastDataTypeLen;
-        int lastObisCounter;
-
-        quint8 messageCounterRRR, messageCounterSSS;
-
-        ObisList lastObisList;
-
-        quint8 relayAtttr;
-
-        bool lastMeterIsShortDlms;
-
-
-        QByteArray sourceAddressH;//dlsm source address, must be shifted
-
-        DLMSExchangeState() : lastDataTypeLen(0), lastObisCounter(0), messageCounterRRR(0), messageCounterSSS(0), relayAtttr(0), sourceAddressH("03") {}
-    } lastExchangeState;
+    DLMSExchangeState lastExchangeState;
 
     bool verboseMode;
 
@@ -125,7 +103,12 @@ public:
 
     void resetHDLCglobalVariables();
 
+    void setDlmsFuckingChecks(const QVariantHash &h);
+
     bool messageIsValid(const QByteArray &readArr, QVariantList &listMeterMesageVar, QList<QByteArray> &commandCodeH, const QByteArray &lastAddrH, quint8 &frameType, quint8 &errCode, const QByteArray lastSrcAddr = "");
+
+    bool messageIsValidExt(DLMSExchangeState &lastExchangeState, const QByteArray &readArr, QVariantList &listMeterMesageVar, QList<QByteArray> &commandCodeH, const QByteArray &lastAddrH, quint8 &frameType, quint8 &errCode, const QByteArray lastSrcAddr = "");
+
 
     QByteArray getArrayHex(const QByteArray &readArr, const QByteArray &lastSrcAddr, const QByteArray &lastAddrH, bool &endOfRRframes, bool &need2useBuffer, quint8 &frameType);
 
@@ -133,9 +116,9 @@ public:
 
     bool isItShortDLMSBreak(const quint8 &frameType, const QByteArray &lastSrcAddr, const QByteArray &meterMessH);
 
-    bool checkPreparyCache(QByteArray &meterMessH, quint8 &errCode, int &obisCounter, int &payloadLen, int &dataTypeLen, const bool &lastMeterIsShortDlms);
+    bool checkPreparyCache(QByteArray &meterMessH, quint8 &errCode, int &obisCounter, int &payloadLen, int &dataTypeLen, DLMSExchangeState &lastExchangeState, int &forcedDataTypeLen);
 
-    QVariantList processCachedData(int &obisCounter, QByteArray &meterMessH, int &dataTypeLen, QList<QByteArray> &commandCodeH, bool &need2useBuffer, int &ob, QByteArray &topType);
+    QVariantList processCachedData(int &obisCounter, QByteArray &meterMessH, int &dataTypeLen, QList<QByteArray> &commandCodeH, bool &need2useBuffer, int &ob, QByteArray &topType, const int &forcedDataTypeLen);
 
     void topArrayChecks(const bool &hasByteA8, QByteArray &meterMessH, QByteArray &topType, QVariantList &listMeterMesageVar, bool &endOfRRframes, bool &need2useBuffer, int &obisCounter, int &ob);
 

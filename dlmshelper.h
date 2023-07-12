@@ -33,9 +33,9 @@ public:
     static QString arrh2dataTimeDstSett(const QByteArray &arrh, const int &deviation, const bool &deviationSettIsValid);
 
 
-    static QVariantMap arr2map(QByteArray arrh, int addLen, bool &isNotAll, quint32 &arrlen, const bool &verboseMode);
+    static QVariantMap arr2map(QByteArray arrh, int addLen, bool &isNotAll, quint32 &arrlen, const bool &verboseMode, const int &forcedDataTypeLen);
 
-    static QVariantMap strct2map(QByteArray arrh, int addLen, bool &isNotAll, quint32 &arrlen, const bool &verboseMode);
+    static QVariantMap strct2map(QByteArray arrh, int addLen, bool &isNotAll, quint32 &arrlen, const bool &verboseMode, const int &forcedDataTypeLen);
 
 
     static void moveCache2hash(const QVariantHash &h, const QList<QByteArray> &commandCodeH, QVariantHash &hashTmpData, quint16 &step, int &error_counter, const bool &verboseMode, LastErrStruct &lastErrS);

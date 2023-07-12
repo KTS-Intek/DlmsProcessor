@@ -212,10 +212,30 @@ void DlmsProcessor::resetHDLCglobalVariables()
     lastExchangeState.lastObisCounter = 0;
     lastExchangeState.lastObisList.clear();
     lastExchangeState.lastMeterH.clear();
+
+    lastExchangeState.dlmsFuckingChecksRemoveTypePrefixH.clear();
+    lastExchangeState.dlmsFuckingChecksRemoveLen = 0;
+    lastExchangeState.dlmsFuckingChecksObisCounterPos = 0;
+    lastExchangeState.dlmsFuckingChecksForceDataLen = 0;    
+    lastExchangeState.dlmsFuckingIgnoreEndOfRRframes = false;
+    lastExchangeState.dlmsFuckingLastReceivedArr.clear();
+    lastExchangeState.dlmsFukcingForcedDataPrefixH.clear();
+
 }
 //----------------------------------------------------------------------------------
 bool DlmsProcessor::messageIsValid(const QByteArray &readArr, QVariantList &listMeterMesageVar, QList<QByteArray> &commandCodeH, const QByteArray &lastAddrH, quint8 &frameType, quint8 &errCode, const QByteArray lastSrcAddr)
 {
+    //use it only for testing of the incomming data
+     auto lastExchange = lastExchangeState;
+    return messageIsValidExt(lastExchange, readArr, listMeterMesageVar, commandCodeH, lastAddrH, frameType, errCode, lastSrcAddr);
+}
+//----------------------------------------------------------------------------------
+bool DlmsProcessor::messageIsValidExt(DLMSExchangeState &lastExchangeState, const QByteArray &readArr, QVariantList &listMeterMesageVar, QList<QByteArray> &commandCodeH, const QByteArray &lastAddrH, quint8 &frameType, quint8 &errCode, const QByteArray lastSrcAddr)
+{
+    //do not use it for testing of incomming data
+    const bool hadMoreData = lastExchangeState.dlmsFuckingHasMoreData;
+
+    lastExchangeState.dlmsFuckingHasMoreData = false;
     errCode = ERR_ALL_GOOD;
     listMeterMesageVar.clear();
     commandCodeH.clear();
@@ -233,34 +253,65 @@ bool DlmsProcessor::messageIsValid(const QByteArray &readArr, QVariantList &list
 
     const bool hasByteA8 = need2useBuffer;
 
-    QByteArray meterMessH = arrHex.mid(16);
+    QByteArray meterMessageH = arrHex.mid(16);
 
 
-    if(!isCrcValid(meterMessH, arrHex, errCode))
+    if(!isCrcValid(meterMessageH, arrHex, errCode))
         return (errCode == ERR_CHECK_AUTHORIZE);//be careful, if something wrong with authorization, it must return true
 
 
-    meterMessH = meterMessH.mid(4);//remove HCS
+    meterMessageH = meterMessageH.mid(4);//remove HCS
     const bool checkTopArr = (!lastExchangeState.lastMeterH.isEmpty() || !endOfRRframes);
-
+    bool ignoreCheckTopArr = false;
 
     //LLC bytes
     int obisCounter = 1;
     int payloadLen = -1;
     int dataTypeLen = 4;
 
-    if(isItShortDLMSBreak(frameType, lastSrcAddr, meterMessH))
+    if(isItShortDLMSBreak(frameType, lastSrcAddr, meterMessageH))
         return true;
 
 
 
+    QByteArray meterMessageHCache ;
+
+    int forcedDataTypeLen = 0; //use default is 0
+    bool checkMeterMessageH = false;
     if(lastExchangeState.lastMeterH.isEmpty()){
-        const bool r = checkPreparyCache(meterMessH, errCode, obisCounter, payloadLen, dataTypeLen, lastExchangeState.lastMeterIsShortDlms);
+        const bool r = checkPreparyCache(meterMessageH, errCode, obisCounter, payloadLen, dataTypeLen, lastExchangeState, forcedDataTypeLen);
+        meterMessageHCache = meterMessageH;
+        checkMeterMessageH = true;
         if(errCode != ERR_ALL_GOOD)
             return r;
 
     }else{
         obisCounter = lastExchangeState.lastObisCounter;
+
+        if(!lastExchangeState.dlmsFuckingChecksRemoveTypePrefixH.isEmpty() &&
+                meterMessageH.mid(6).toUpper().startsWith(lastExchangeState.dlmsFuckingChecksRemoveTypePrefixH.toUpper())){
+            meterMessageH = meterMessageH.mid(6);//remove LLC    E6 E7 00 - LLC bytes
+
+            meterMessageHCache = meterMessageH.mid(lastExchangeState.dlmsFuckingChecksRemoveLen);
+            meterMessageHCache.prepend(lastExchangeState.lastMeterH);
+
+            checkMeterMessageH = true;
+
+
+            //removeLen
+            //obisCounter
+            ignoreCheckTopArr = true;
+            lastExchangeState.dlmsFuckingLastReceivedArr = QByteArray::fromHex(meterMessageH);
+            if(lastExchangeState.dlmsFuckingChecksForceDataLen > 0){
+                dataTypeLen = lastExchangeState.dlmsFuckingChecksForceDataLen;
+                forcedDataTypeLen = lastExchangeState.dlmsFuckingChecksForceDataLen;
+            }
+
+        //it is necessary, I don't know why, by meterMessageH is always broken if I don't do it
+            lastExchangeState.lastMeterH.clear();
+            meterMessageH = meterMessageHCache;
+
+        }
     }
 
 
@@ -270,29 +321,51 @@ bool DlmsProcessor::messageIsValid(const QByteArray &readArr, QVariantList &list
 
     lastExchangeState.lastDataTypeLen = dataTypeLen;
     lastExchangeState.lastObisCounter = obisCounter;
-    meterMessH.prepend(lastExchangeState.lastMeterH);
+
+    if(!lastExchangeState.lastMeterH.isEmpty())
+        meterMessageH.prepend(lastExchangeState.lastMeterH);
+
+
+
     if(!lastSrcAddr.isEmpty())
         lastExchangeState.lastMeterH.clear();
-//0001 03
+
 
     int ob = 0;
     QByteArray topType;
-    listMeterMesageVar = processCachedData(obisCounter, meterMessH, dataTypeLen, commandCodeH, need2useBuffer, ob, topType);
+    listMeterMesageVar = processCachedData(obisCounter, meterMessageH, dataTypeLen, commandCodeH, need2useBuffer, ob, topType, forcedDataTypeLen);
 
 
 
     if(verboseMode)
-    qDebug() << "messageIsValid checkTopArr=" << checkTopArr << topType.isEmpty() << listMeterMesageVar.size()  << obisCounter << ob << need2useBuffer << meterMessH.isEmpty() << endOfRRframes;
+    qDebug() << "messageIsValid checkTopArr=" << checkTopArr << topType.isEmpty() << listMeterMesageVar.size()  << obisCounter << ob << need2useBuffer << meterMessageH.isEmpty() << endOfRRframes;
 
 
-    if(checkTopArr)
-        topArrayChecks(hasByteA8, meterMessH, topType, listMeterMesageVar, endOfRRframes, need2useBuffer, obisCounter, ob);
+    if(checkTopArr && !ignoreCheckTopArr)
+        topArrayChecks(hasByteA8, meterMessageH, topType, listMeterMesageVar, endOfRRframes, need2useBuffer, obisCounter, ob);
 
-    if(!endOfRRframes && need2useBuffer && !meterMessH.isEmpty() ){
-        lastExchangeState.lastMeterH = topType + meterMessH;
-        if(verboseMode) qDebug() << "messageIsValid lastExchangeState.lastMeterH=" << lastExchangeState.lastMeterH;
+    if((lastExchangeState.dlmsFuckingIgnoreEndOfRRframes && need2useBuffer )){
+         lastExchangeState.lastMeterH = meterMessageHCache;
+        lastExchangeState.dlmsFuckingHasMoreData = true;
+        if(verboseMode)
+            qDebug() << "messageIsValid dlmsFuckingIgnoreEndOfRRframes lastExchangeState.lastMeterH=" << lastExchangeState.dlmsFuckingIgnoreEndOfRRframes << lastExchangeState.lastMeterH;
+
         return true;
     }
+
+    if((!endOfRRframes && need2useBuffer && !meterMessageH.isEmpty()) ){
+        lastExchangeState.lastMeterH = topType + meterMessageH;
+        if(verboseMode) qDebug() << "messageIsValid lastExchangeState.lastMeterH=" << lastExchangeState.lastMeterH ;
+        return true;
+    }
+
+    if(hadMoreData && !lastExchangeState.dlmsFuckingHasMoreData && verboseMode){
+        qDebug() << "messageIsValid hadMoreData " << hadMoreData << need2useBuffer << lastExchangeState.dlmsFuckingHasMoreData ;
+        qDebug() << "messageIsValid hadMoreData meterMessageHCache " << meterMessageHCache ;
+        qDebug() << "messageIsValid hadMoreData lastExchangeState.lastMeterH " << lastExchangeState.lastMeterH;
+
+    }
+
 
     return (!listMeterMesageVar.isEmpty() && (obisCounter == ob));
 }
@@ -398,7 +471,7 @@ bool DlmsProcessor::isItShortDLMSBreak(const quint8 &frameType, const QByteArray
     return false;
 }
 //----------------------------------------------------------------------------------
-bool DlmsProcessor::checkPreparyCache(QByteArray &meterMessH, quint8 &errCode, int &obisCounter, int &payloadLen, int &dataTypeLen, const bool &lastMeterIsShortDlms)
+bool DlmsProcessor::checkPreparyCache(QByteArray &meterMessH, quint8 &errCode, int &obisCounter, int &payloadLen, int &dataTypeLen, DLMSExchangeState &lastExchangeState, int &forcedDataTypeLen)
 {
 
     //E6 E7 00 - responce
@@ -407,10 +480,12 @@ bool DlmsProcessor::checkPreparyCache(QByteArray &meterMessH, quint8 &errCode, i
         errCode = ERR_CHECK_AUTHORIZE;
         return false;
     }
-    meterMessH = meterMessH.mid(6);//remove LLC
+    meterMessH = meterMessH.mid(6);//remove LLC    E6 E7 00 - LLC bytes
 
     int removeLen = 0;
-    const quint8 cosemType = meterMessH.left(2).toUInt(0, 16);
+    const quint8 cosemType = meterMessH.left(2).toUInt(0, 16); //C4
+
+    QByteArray forcedPrefixH;
 
     if(cosemType == 0xC4){ //get.response   C4 03 81 06 || C4 01 81
 
@@ -421,8 +496,34 @@ bool DlmsProcessor::checkPreparyCache(QByteArray &meterMessH, quint8 &errCode, i
             if(meterMessH.left(4).toUpper() == "C401" || meterMessH.left(4).toUpper() == "C402"){ //C4 01 81
                 removeLen = 6;
             }
+            //C4 02 81 01 00 00 00 01 00 45 <len> <data type 2 bytes>
+
+            //C4 02 81 01 00 00 00 01 00 4A <len> <data type 1 byte>
+
+            //load profile comes with
+            //C4 02 81 00 00 00 00 01 00 5E 01   30
         }
         payloadLen = -1;//
+
+        if(!lastExchangeState.dlmsFuckingChecksRemoveTypePrefixH.isEmpty() &&
+                meterMessH.toUpper().startsWith(lastExchangeState.dlmsFuckingChecksRemoveTypePrefixH.toUpper())){
+            //removeLen
+            //obisCounter
+
+            obisCounter = meterMessH.mid(lastExchangeState.dlmsFuckingChecksObisCounterPos,2).toInt(0, 16);
+            removeLen = lastExchangeState.dlmsFuckingChecksRemoveLen;
+            lastExchangeState.dlmsFuckingLastReceivedArr = QByteArray::fromHex(meterMessH);
+            if(lastExchangeState.dlmsFuckingChecksForceDataLen > 0){
+                dataTypeLen = lastExchangeState.dlmsFuckingChecksForceDataLen;
+                forcedDataTypeLen = lastExchangeState.dlmsFuckingChecksForceDataLen;
+            }
+
+            if(!lastExchangeState.dlmsFukcingForcedDataPrefixH.isEmpty())
+                forcedPrefixH = lastExchangeState.dlmsFukcingForcedDataPrefixH;
+
+        }
+//        dataprocessor.lastExchangeState.dlmsFuckingChecks.insert("DLMS_removeTypeLenAdd", 7);
+//        dataprocessor.lastExchangeState.dlmsFuckingChecks.insert("DLMS_removeTypePrefixH", "C40281");
 
     }else{
         if(meterMessH.left(2 * 4).toUpper() == "C5018100"){
@@ -430,14 +531,15 @@ bool DlmsProcessor::checkPreparyCache(QByteArray &meterMessH, quint8 &errCode, i
             return true;
         }
 
-        if(cosemType == 0xC0 || (lastMeterIsShortDlms && cosemType == 0x0C)){
+        if(cosemType == 0xC0 || (lastExchangeState.lastMeterIsShortDlms && cosemType == 0x0C)){
             //0C 01 00
             obisCounter = meterMessH.mid(2,2).toUInt(0,16);
-            removeLen =  (lastMeterIsShortDlms && cosemType == 0x0C) ? 4 : 3;
+            removeLen =  (lastExchangeState.lastMeterIsShortDlms && cosemType == 0x0C) ? 4 : 3;
 //                if(lastExchangeState.lastMeterIsShortDlms && cosemType == 0x0C)
 //                    dataTypeLen = 2; //old version of protocol
             if(meterMessH.mid(4,2).toUInt(0, 16) != 0x0){
-                qDebug() << "erro messageIsValid " << meterMessH.left(8) << cosemType << obisCounter << payloadLen << dataTypeLen;
+                if(verboseMode)
+                    qDebug() << "erro messageIsValid " << meterMessH.left(8) << cosemType << obisCounter << payloadLen << dataTypeLen;
                 errCode = ERR_CHECK_AUTHORIZE;
                 return true;
             }
@@ -459,15 +561,15 @@ bool DlmsProcessor::checkPreparyCache(QByteArray &meterMessH, quint8 &errCode, i
     }
 
 
-    if(verboseMode) qDebug() << "err calc len " << meterMessH.left(8) <<  obisCounter << payloadLen << dataTypeLen << cosemType << removeLen << lastMeterIsShortDlms;
+    if(verboseMode) qDebug() << "err calc len " << meterMessH.left(8) <<  obisCounter << payloadLen << dataTypeLen << cosemType << removeLen << lastExchangeState.lastMeterIsShortDlms;
 
-    meterMessH = meterMessH.mid(removeLen);//remove tag and len
+    meterMessH = forcedPrefixH + meterMessH.mid(removeLen);//remove tag and len
     return true;
 }
 
 //----------------------------------------------------------------------------------
 
-QVariantList DlmsProcessor::processCachedData(int &obisCounter, QByteArray &meterMessH, int &dataTypeLen, QList<QByteArray> &commandCodeH, bool &need2useBuffer, int &ob, QByteArray &topType)
+QVariantList DlmsProcessor::processCachedData(int &obisCounter, QByteArray &meterMessH, int &dataTypeLen, QList<QByteArray> &commandCodeH, bool &need2useBuffer, int &ob, QByteArray &topType, const int &forcedDataTypeLen)
 {
     QVariantList listMeterMesageVar;
 
@@ -502,11 +604,11 @@ QVariantList DlmsProcessor::processCachedData(int &obisCounter, QByteArray &mete
         }else{
             if(datatype == DLMS_DATA_TYPE_ARRAY){
                 useReadyVal = true;
-                readyVal = DlmsHelper::arr2map(meterMessH.mid(dataTypeLen), addLen, isNotAll, len, verboseMode);
+                readyVal = DlmsHelper::arr2map(meterMessH.mid(dataTypeLen), addLen, isNotAll, len, verboseMode, forcedDataTypeLen);
             }else{
                 if(datatype == DLMS_DATA_TYPE_STRUCTURE){
                     useReadyVal = true;
-                    readyVal = DlmsHelper::strct2map(meterMessH.mid(dataTypeLen), addLen, isNotAll, len, verboseMode);
+                    readyVal = DlmsHelper::strct2map(meterMessH.mid(dataTypeLen), addLen, isNotAll, len, verboseMode, forcedDataTypeLen);
                 }
             }
         }
@@ -550,7 +652,8 @@ QVariantList DlmsProcessor::processCachedData(int &obisCounter, QByteArray &mete
 
         if(isNotAll){
             need2useBuffer = true;
-            qDebug() << "exit for loop " << ob << obisCounter << listMeterMesageVar;
+            if(verboseMode)
+                qDebug() << "exit for loop " << ob << obisCounter << listMeterMesageVar;
             break;
         }
     }
@@ -653,7 +756,8 @@ QByteArray DlmsProcessor::crcCalcExt(const QByteArray &arrAddrHex, const quint8 
         break;}
 
     default:{
-        qDebug() << "unknown frameHdlc " << frameType;
+        if(verboseMode)
+            qDebug() << "unknown frameHdlc " << frameType;
         byteFrameType = QByteArray::number(frameType, 16); break;}
 
     }
@@ -828,6 +932,7 @@ void DlmsProcessor::fullLogined(const QVariantList &meterMessVar, const quint8 &
             hashTmpData.insert("logined", true);
             hashTmpData.insert("messFail", false);
 //                step = 0xFFFF;
+
         }
         hashTmpData.remove("DLMS_SNRM_ready");
 

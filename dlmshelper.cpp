@@ -294,7 +294,7 @@ QString DlmsHelper::arrh2dataTimeDstSett(const QByteArray &arrh, const int &devi
 
 //-----------------------------------------------------------------------------------------
 
-QVariantMap DlmsHelper::arr2map(QByteArray arrh, int addLen, bool &isNotAll, quint32 &arrlen, const bool &verboseMode)
+QVariantMap DlmsHelper::arr2map(QByteArray arrh, int addLen, bool &isNotAll, quint32 &arrlen, const bool &verboseMode, const int &forcedDataTypeLen)
 {
     //array 2 map
 
@@ -305,6 +305,8 @@ QVariantMap DlmsHelper::arr2map(QByteArray arrh, int addLen, bool &isNotAll, qui
     QVariantMap m;
 
     int dataTypeLen = 2;
+    if(forcedDataTypeLen > 0)
+        dataTypeLen = forcedDataTypeLen;
 
     for(int i = 0; i < arrsize; i++){
 
@@ -330,11 +332,11 @@ QVariantMap DlmsHelper::arr2map(QByteArray arrh, int addLen, bool &isNotAll, qui
             if(datatype == DLMS_DATA_TYPE_ARRAY){
 //                need2useBuffer = true;
                 useReadyVal = true;
-                readyval = arr2map(arrh.mid(dataTypeLen), addLen, isNotAll, len, verboseMode);
+                readyval = arr2map(arrh.mid(dataTypeLen), addLen, isNotAll, len, verboseMode, forcedDataTypeLen);
             }else{
                 if(datatype == DLMS_DATA_TYPE_STRUCTURE){//toVariantList
                     useReadyVal = true;
-                    readyval = strct2map(arrh.mid(dataTypeLen), addLen, isNotAll, len, verboseMode);
+                    readyval = strct2map(arrh.mid(dataTypeLen), addLen, isNotAll, len, verboseMode, forcedDataTypeLen);
                 }
             }
         }
@@ -369,7 +371,7 @@ QVariantMap DlmsHelper::arr2map(QByteArray arrh, int addLen, bool &isNotAll, qui
 
 //-----------------------------------------------------------------------------------------
 
-QVariantMap DlmsHelper::strct2map(QByteArray arrh, int addLen, bool &isNotAll, quint32 &arrlen, const bool &verboseMode)
+QVariantMap DlmsHelper::strct2map(QByteArray arrh, int addLen, bool &isNotAll, quint32 &arrlen, const bool &verboseMode, const int &forcedDataTypeLen)
 {
     arrlen = 0;
     //len data
@@ -379,6 +381,8 @@ QVariantMap DlmsHelper::strct2map(QByteArray arrh, int addLen, bool &isNotAll, q
 
     QVariantMap m;
     int dataTypeLen = 2;
+    if(forcedDataTypeLen > 0)
+        dataTypeLen = forcedDataTypeLen;
 
     for(int i = 0; i < strctlen; i++){
         const quint16 datatype = arrh.left(dataTypeLen).toUInt(0, 16);
@@ -401,11 +405,11 @@ QVariantMap DlmsHelper::strct2map(QByteArray arrh, int addLen, bool &isNotAll, q
             if(datatype == DLMS_DATA_TYPE_ARRAY){
 //                need2useBuffer = true;
                 useReadyVal = true;
-                readyval = arr2map(arrh.mid(dataTypeLen), addLen, isNotAll, len, verboseMode);
+                readyval = arr2map(arrh.mid(dataTypeLen), addLen, isNotAll, len, verboseMode, forcedDataTypeLen);
             }else{
                 if(datatype == DLMS_DATA_TYPE_STRUCTURE){//toVariantList
                     useReadyVal = true;
-                    readyval = strct2map(arrh.mid(dataTypeLen), addLen, isNotAll, len, verboseMode);
+                    readyval = strct2map(arrh.mid(dataTypeLen), addLen, isNotAll, len, verboseMode, forcedDataTypeLen);
                 }
             }
         }
